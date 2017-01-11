@@ -66,9 +66,33 @@ func main() {
 		}
 	})
 
+	app.Command("executes", "List execute statements. Incomplete", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			proc := &executions{}
+			cmdErr = walkSource(*sourceRoot, proc)
+			if cmdErr != nil {
+				return
+			}
+
+			proc.end()
+		}
+	})
+
 	app.Command("lexer-check", "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			proc := &lexCheck{}
+			cmdErr = walkSource(*sourceRoot, proc)
+			if cmdErr != nil {
+				return
+			}
+
+			proc.end()
+		}
+	})
+
+	app.Command("identifiers", "List identifier tokens, one per line.  This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			proc := &identFreq{}
 			cmdErr = walkSource(*sourceRoot, proc)
 			if cmdErr != nil {
 				return
@@ -251,6 +275,70 @@ func (lp *stringConsts) process(path string) error {
 			return nil
 		case equilex.StringConstant:
 			fmt.Println(lit[1 : len(lit)-1])
+		}
+	}
+}
+
+type identFreq struct{}
+
+func (ifr *identFreq) end() {}
+
+func (ifr *identFreq) process(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
+
+	for {
+		tok, lit := l.Scan()
+
+		switch tok {
+		case equilex.EOF:
+			return nil
+		case equilex.Identifier:
+			fmt.Println(lit)
+		}
+	}
+}
+
+type executions struct{}
+
+func (ex *executions) end() {}
+
+func (ex *executions) process(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
+
+	execStmt := ""
+
+	for {
+		tok, lit := l.Scan()
+
+		switch tok {
+		case equilex.EOF:
+			if execStmt != "" {
+				log.Println(execStmt)
+			}
+			return nil
+		case equilex.Execute:
+			execStmt = "execute"
+		case equilex.NewLine:
+			if execStmt != "" {
+				log.Println(execStmt)
+			}
+			execStmt = ""
+		default:
+			if execStmt != "" {
+				execStmt = execStmt + lit
+			}
 		}
 	}
 }
