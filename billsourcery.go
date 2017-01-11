@@ -66,7 +66,7 @@ func main() {
 		}
 	})
 
-	app.Command("lexer-check", "Ensure the lexer can correctly scan all source", func(cmd *cli.Cmd) {
+	app.Command("lexer-check", "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			proc := &lexCheck{}
 			cmdErr = walkSource(*sourceRoot, proc)
