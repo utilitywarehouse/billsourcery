@@ -317,28 +317,50 @@ func (ex *executions) process(path string) error {
 
 	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
 
-	execStmt := ""
+	var stmt *statement
 
 	for {
 		tok, lit := l.Scan()
 
 		switch tok {
 		case equilex.EOF:
-			if execStmt != "" {
-				log.Println(execStmt)
+			if stmt != nil {
+				log.Println(stmt.String())
 			}
 			return nil
 		case equilex.Execute:
-			execStmt = "execute"
+			stmt = &statement{}
+			stmt.add(tok, lit)
 		case equilex.NewLine:
-			if execStmt != "" {
-				log.Println(execStmt)
+			if stmt != nil {
+				log.Println(stmt.String())
 			}
-			execStmt = ""
+			stmt = nil
 		default:
-			if execStmt != "" {
-				execStmt = execStmt + lit
+			if stmt != nil {
+				stmt.add(tok, lit)
 			}
 		}
 	}
+}
+
+type token struct {
+	tok equilex.Token
+	lit string
+}
+
+type statement struct {
+	tokens []token
+}
+
+func (stmt *statement) String() string {
+	var buf bytes.Buffer
+	for _, t := range stmt.tokens {
+		buf.WriteString(t.lit)
+	}
+	return buf.String()
+}
+
+func (stmt *statement) add(tok equilex.Token, lit string) {
+	stmt.tokens = append(stmt.tokens, token{tok, lit})
 }
