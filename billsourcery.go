@@ -113,7 +113,7 @@ func walkSource(sourceRoot string, proc processor) error {
 			panic(err)
 		}
 		switch filepath.Dir(relative) {
-		case "Forms", "Methods", "Procedures":
+		case "Exports", "Forms", "Imports", "Methods", "Procedures", "Processes", "Queries", "Reports":
 			return true
 		default:
 			return false
