@@ -144,49 +144,6 @@ func walkSource(sourceRoot string, proc processor) error {
 	})
 }
 
-type statsProcessor struct {
-	filecount    int
-	commentcount int
-	othercount   int
-}
-
-func (lp *statsProcessor) end() {
-	fmt.Printf("files : %d\n", lp.filecount)
-	fmt.Printf("code bytes  (non-comments) : %d\n", lp.othercount)
-	fmt.Printf("comment bytes : %d\n", lp.commentcount)
-	fmt.Printf("total bytes : %d\n", lp.commentcount+lp.othercount)
-}
-
-func (lp *statsProcessor) process(path string) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	lp.filecount++
-
-	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
-
-	for {
-		tok, lit := l.Scan()
-
-		switch tok {
-		case equilex.EOF:
-			return nil
-		case equilex.Comment:
-			lp.commentcount += len(lit)
-		default:
-			lp.othercount += len(lit)
-		}
-
-		switch tok {
-		case equilex.EOF:
-			return nil
-		}
-	}
-}
-
 type commentStripper struct{}
 
 func (lp *commentStripper) end() {}
