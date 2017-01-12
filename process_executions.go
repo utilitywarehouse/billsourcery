@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 
 	"github.com/utilitywarehouse/equilex"
@@ -30,7 +30,7 @@ func (ex *executions) process(path string) error {
 		switch tok {
 		case equilex.EOF:
 			if stmt != nil {
-				log.Println(stmt.String())
+				fmt.Println(stmt.String())
 			}
 			return nil
 		case equilex.Execute:
@@ -38,7 +38,7 @@ func (ex *executions) process(path string) error {
 			stmt.add(tok, lit)
 		case equilex.NewLine:
 			if stmt != nil {
-				log.Println(stmt.String())
+				fmt.Println(stmt.String())
 			}
 			stmt = nil
 		default:
