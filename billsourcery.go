@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -141,31 +140,6 @@ func walkSource(sourceRoot string, proc processor) error {
 		}
 		return nil
 	})
-}
-
-type identFreq struct{}
-
-func (ifr *identFreq) end() {}
-
-func (ifr *identFreq) process(path string) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
-
-	for {
-		tok, lit := l.Scan()
-
-		switch tok {
-		case equilex.EOF:
-			return nil
-		case equilex.Identifier:
-			fmt.Println(lit)
-		}
-	}
 }
 
 type executions struct{}
