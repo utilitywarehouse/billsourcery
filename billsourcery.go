@@ -72,6 +72,18 @@ func main() {
 		}
 	})
 
+	app.Command("public-procs", "List public procedures and public externals", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			proc := &pubProcs{}
+			cmdErr = walkSource(*sourceRoot, proc)
+			if cmdErr != nil {
+				return
+			}
+
+			proc.end()
+		}
+	})
+
 	app.Command("lexer-check", "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			proc := &lexCheck{}
