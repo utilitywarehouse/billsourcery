@@ -86,7 +86,7 @@ func main() {
 
 	app.Command("identifiers", "List identifier tokens, one per line.  This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &identFreq{}
+			proc := &identifiers{}
 			cmdErr = walkSource(*sourceRoot, proc)
 			if cmdErr != nil {
 				return

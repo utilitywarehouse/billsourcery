@@ -9,11 +9,11 @@ import (
 	"golang.org/x/text/transform"
 )
 
-type identFreq struct{}
+type identifiers struct{}
 
-func (ifr *identFreq) end() {}
+func (ifr *identifiers) end() {}
 
-func (ifr *identFreq) process(path string) error {
+func (ifr *identifiers) process(path string) error {
 	f, err := os.Open(path)
 	if err != nil {
 		return err
