@@ -9,9 +9,15 @@ import (
 	"golang.org/x/text/transform"
 )
 
-type executions struct{}
+type executions struct {
+	stmts []*statement
+}
 
-func (ex *executions) end() {}
+func (ex *executions) end() {
+	for _, stmt := range ex.stmts {
+		fmt.Println(stmt.String())
+	}
+}
 
 func (ex *executions) process(path string) error {
 	f, err := os.Open(path)
@@ -30,7 +36,7 @@ func (ex *executions) process(path string) error {
 		switch tok {
 		case equilex.EOF:
 			if stmt != nil {
-				fmt.Println(stmt.String())
+				ex.stmts = append(ex.stmts, stmt)
 			}
 			return nil
 		case equilex.Execute:
@@ -38,7 +44,7 @@ func (ex *executions) process(path string) error {
 			stmt.add(tok, lit)
 		case equilex.NewLine:
 			if stmt != nil {
-				fmt.Println(stmt.String())
+				ex.stmts = append(ex.stmts, stmt)
 			}
 			stmt = nil
 		default:
