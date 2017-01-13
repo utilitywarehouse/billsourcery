@@ -9,9 +9,15 @@ import (
 	"golang.org/x/text/transform"
 )
 
-type pubProcs struct{}
+type pubProcs struct {
+	stmts []*statement
+}
 
-func (ex *pubProcs) end() {}
+func (ex *pubProcs) end() {
+	for _, stmt := range ex.stmts {
+		fmt.Println(stmt.String())
+	}
+}
 
 func (ex *pubProcs) process(path string) error {
 	f, err := os.Open(path)
@@ -47,7 +53,7 @@ func (ex *pubProcs) process(path string) error {
 			}
 		case equilex.NewLine:
 			if stmt != nil {
-				fmt.Println(stmt.String())
+				ex.stmts = append(ex.stmts, stmt)
 			}
 			stmt = nil
 			atStart = true
