@@ -89,6 +89,12 @@ func main() {
 		}
 	})
 
+	app.Command("calls-neo", "Produce neo4j cypher statements to create bill call graph. (Procedures not supported properly yet)", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			doProcessAll(*sourceRoot, newCalls())
+		}
+	})
+
 	app.Command("lexer-check", "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			doProcessAll(*sourceRoot, &lexCheck{})
