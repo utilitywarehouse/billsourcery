@@ -3,19 +3,26 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/utilitywarehouse/equilex"
 	"golang.org/x/text/encoding/charmap"
 	"golang.org/x/text/transform"
 )
 
+func newExecutions() *executions {
+	return &executions{make(map[string]([]*statement))}
+}
+
 type executions struct {
-	stmts []*statement
+	stmts map[string]([]*statement)
 }
 
 func (ex *executions) end() {
-	for _, stmt := range ex.stmts {
-		fmt.Println(stmt.String())
+	for _, stmts := range ex.stmts {
+		for _, stmt := range stmts {
+			fmt.Println(stmt.String())
+		}
 	}
 }
 
@@ -28,6 +35,8 @@ func (ex *executions) process(path string) error {
 
 	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
 
+	fn := filename(path)
+
 	var stmt *statement
 
 	for {
@@ -36,7 +45,9 @@ func (ex *executions) process(path string) error {
 		switch tok {
 		case equilex.EOF:
 			if stmt != nil {
-				ex.stmts = append(ex.stmts, stmt)
+				s := ex.stmts[fn]
+				s = append(s, stmt)
+				ex.stmts[fn] = s
 			}
 			return nil
 		case equilex.Execute:
@@ -44,7 +55,9 @@ func (ex *executions) process(path string) error {
 			stmt.add(tok, lit)
 		case equilex.NewLine:
 			if stmt != nil {
-				ex.stmts = append(ex.stmts, stmt)
+				s := ex.stmts[fn]
+				s = append(s, stmt)
+				ex.stmts[fn] = s
 			}
 			stmt = nil
 		default:
@@ -53,4 +66,9 @@ func (ex *executions) process(path string) error {
 			}
 		}
 	}
+}
+
+func filename(path string) string {
+	_, file := filepath.Split(path)
+	return file
 }

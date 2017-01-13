@@ -62,7 +62,7 @@ func main() {
 
 	app.Command("executes", "List execute statements. Incomplete", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &executions{}
+			proc := newExecutions()
 			cmdErr = walkSource(*sourceRoot, proc)
 			if cmdErr != nil {
 				return
