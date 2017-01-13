@@ -95,6 +95,12 @@ func main() {
 		}
 	})
 
+	app.Command("calls-dot", "Produce a .dot file of calls", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			doProcessAll(*sourceRoot, newGVCalls())
+		}
+	})
+
 	app.Command("lexer-check", "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			doProcessAll(*sourceRoot, &lexCheck{})
