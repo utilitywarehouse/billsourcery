@@ -18,9 +18,8 @@ func (m *methods) end() {
 
 func (m *methods) process(path string) error {
 	dir, file := filepath.Split(path)
-	file = strings.ToLower(file)
-	if strings.HasSuffix(dir, "/Methods/") && strings.HasSuffix(file, ".jc@.txt") {
-		m.methods = append(m.methods, file[0:len(file)-8])
+	if strings.HasSuffix(dir, "/Methods/") {
+		m.methods = append(m.methods, filenameToIdentifier(file))
 	}
 	return nil
 }
