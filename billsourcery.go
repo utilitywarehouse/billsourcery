@@ -96,6 +96,18 @@ func main() {
 		}
 	})
 
+	app.Command("forms", "List form names", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			proc := &forms{}
+			cmdErr = walkSource(*sourceRoot, proc)
+			if cmdErr != nil {
+				return
+			}
+
+			proc.end()
+		}
+	})
+
 	app.Command("lexer-check", "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			proc := &lexCheck{}
