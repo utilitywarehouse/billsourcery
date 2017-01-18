@@ -13,10 +13,11 @@ type lexCheck struct {
 	anyErrors bool
 }
 
-func (lp *lexCheck) end() {
+func (lp *lexCheck) end() error {
 	if !lp.anyErrors {
 		log.Println("no lexer errors.")
 	}
+	return nil
 }
 
 func (lp *lexCheck) process(path string) error {

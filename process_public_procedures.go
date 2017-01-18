@@ -13,10 +13,11 @@ type pubProcs struct {
 	stmts []*statement
 }
 
-func (ex *pubProcs) end() {
+func (ex *pubProcs) end() error {
 	for _, stmt := range ex.stmts {
 		fmt.Println(stmt.String())
 	}
+	return nil
 }
 
 func (ex *pubProcs) process(path string) error {

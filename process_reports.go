@@ -10,10 +10,11 @@ type reports struct {
 	reports []string
 }
 
-func (m *reports) end() {
+func (m *reports) end() error {
 	for _, method := range m.reports {
 		fmt.Println(method)
 	}
+	return nil
 }
 
 func (m *reports) process(path string) error {

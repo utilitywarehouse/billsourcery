@@ -10,10 +10,11 @@ type methods struct {
 	methods []string
 }
 
-func (m *methods) end() {
+func (m *methods) end() error {
 	for _, method := range m.methods {
 		fmt.Println(method)
 	}
+	return nil
 }
 
 func (m *methods) process(path string) error {

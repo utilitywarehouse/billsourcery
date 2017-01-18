@@ -15,11 +15,12 @@ type statsProcessor struct {
 	othercount   int
 }
 
-func (lp *statsProcessor) end() {
+func (lp *statsProcessor) end() error {
 	fmt.Printf("files : %d\n", lp.filecount)
 	fmt.Printf("code bytes  (non-comments) : %d\n", lp.othercount)
 	fmt.Printf("comment bytes : %d\n", lp.commentcount)
 	fmt.Printf("total bytes : %d\n", lp.commentcount+lp.othercount)
+	return nil
 }
 
 func (lp *statsProcessor) process(path string) error {

@@ -18,12 +18,13 @@ type executions struct {
 	stmts map[string]([]*statement)
 }
 
-func (ex *executions) end() {
+func (ex *executions) end() error {
 	for _, stmts := range ex.stmts {
 		for _, stmt := range stmts {
 			fmt.Println(stmt.String())
 		}
 	}
+	return nil
 }
 
 func (ex *executions) process(path string) error {

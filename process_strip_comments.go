@@ -12,7 +12,7 @@ import (
 
 type commentStripper struct{}
 
-func (lp *commentStripper) end() {}
+func (lp *commentStripper) end() error { return nil }
 
 func (lp *commentStripper) process(path string) error {
 	f, err := os.Open(path)

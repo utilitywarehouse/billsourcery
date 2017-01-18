@@ -10,7 +10,7 @@ import (
 )
 
 type processor interface {
-	end()
+	end() error
 	process(path string) error
 }
 

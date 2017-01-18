@@ -10,10 +10,11 @@ type processes struct {
 	procs []string
 }
 
-func (m *processes) end() {
+func (m *processes) end() error {
 	for _, method := range m.procs {
 		fmt.Println(method)
 	}
+	return nil
 }
 
 func (m *processes) process(path string) error {

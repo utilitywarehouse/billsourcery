@@ -11,7 +11,7 @@ import (
 
 type identifiers struct{}
 
-func (ifr *identifiers) end() {}
+func (ifr *identifiers) end() error { return nil }
 
 func (ifr *identifiers) process(path string) error {
 	f, err := os.Open(path)

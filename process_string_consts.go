@@ -11,7 +11,7 @@ import (
 
 type stringConsts struct{}
 
-func (lp *stringConsts) end() {}
+func (lp *stringConsts) end() error { return nil }
 
 func (lp *stringConsts) process(path string) error {
 	f, err := os.Open(path)

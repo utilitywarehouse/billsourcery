@@ -10,10 +10,11 @@ type forms struct {
 	forms []string
 }
 
-func (m *forms) end() {
+func (m *forms) end() error {
 	for _, method := range m.forms {
 		fmt.Println(method)
 	}
+	return nil
 }
 
 func (m *forms) process(path string) error {
