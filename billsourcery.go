@@ -22,137 +22,69 @@ func main() {
 
 	sourceRoot := app.StringOpt("source-root", "/home/mgarton/work/uw-bill-source-history", "Root directory for equinox source. Subdirs Methods/ Forms/ etc are expected")
 
-	var cmdErr error
-
 	app.Command("stats", "Provide basic stats about the source code", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &statsProcessor{}
-			cmdErr = walkSource(*sourceRoot, proc)
-			if cmdErr != nil {
-				return
-			}
-
-			proc.end()
+			doProcess(*sourceRoot, &statsProcessor{})
 		}
 	})
 
 	app.Command("strip-comments", "Remove comments from the source files", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &commentStripper{}
-			cmdErr = walkSource(*sourceRoot, proc)
-			if cmdErr != nil {
-				return
-			}
-
-			proc.end()
+			doProcess(*sourceRoot, &commentStripper{})
 		}
 	})
 
 	app.Command("string-constants", "Dump all \" delimited string constants found in the source, one per line, to stdout (multi-line strings not included)", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &stringConsts{}
-			cmdErr = walkSource(*sourceRoot, proc)
-			if cmdErr != nil {
-				return
-			}
-
-			proc.end()
+			doProcess(*sourceRoot, &stringConsts{})
 		}
 	})
 
 	app.Command("executes", "List execute statements. Incomplete", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := newExecutions()
-			cmdErr = walkSource(*sourceRoot, proc)
-			if cmdErr != nil {
-				return
-			}
-
-			proc.end()
+			doProcess(*sourceRoot, newExecutions())
 		}
 	})
 
 	app.Command("public-procs", "List public procedures and public externals", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &pubProcs{}
-			cmdErr = walkSource(*sourceRoot, proc)
-			if cmdErr != nil {
-				return
-			}
-
-			proc.end()
+			doProcess(*sourceRoot, &pubProcs{})
 		}
 	})
 
 	app.Command("methods", "List method names", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &methods{}
-			cmdErr = walkSource(*sourceRoot, proc)
-			if cmdErr != nil {
-				return
-			}
-
-			proc.end()
+			doProcess(*sourceRoot, &methods{})
 		}
 	})
 
 	app.Command("forms", "List form names", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &forms{}
-			cmdErr = walkSource(*sourceRoot, proc)
-			if cmdErr != nil {
-				return
-			}
-
-			proc.end()
+			doProcess(*sourceRoot, &forms{})
 		}
 	})
 
 	app.Command("processes", "List process names", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &processes{}
-			cmdErr = walkSource(*sourceRoot, proc)
-			if cmdErr != nil {
-				return
-			}
-
-			proc.end()
+			doProcess(*sourceRoot, &processes{})
 		}
 	})
 
 	app.Command("reports", "List report names", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &reports{}
-			cmdErr = walkSource(*sourceRoot, proc)
-			if cmdErr != nil {
-				return
-			}
-
-			proc.end()
+			doProcess(*sourceRoot, &reports{})
 		}
 	})
 
 	app.Command("lexer-check", "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &lexCheck{}
-			cmdErr = walkSource(*sourceRoot, proc)
-			if cmdErr != nil {
-				return
-			}
-
-			proc.end()
+			doProcess(*sourceRoot, &lexCheck{})
 		}
 	})
 
 	app.Command("identifiers", "List identifier tokens, one per line.  This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			proc := &identifiers{}
-			cmdErr = walkSource(*sourceRoot, proc)
-			if cmdErr != nil {
-				return
-			}
-
-			proc.end()
+			doProcess(*sourceRoot, &identifiers{})
 		}
 	})
 
@@ -160,9 +92,15 @@ func main() {
 		log.Fatal(err)
 	}
 
+}
+
+func doProcess(sourceRoot string, proc processor) {
+	cmdErr := walkSource(sourceRoot, proc)
 	if cmdErr != nil {
 		log.Fatal(cmdErr)
 	}
+
+	proc.end()
 }
 
 func walkSource(sourceRoot string, proc processor) error {
