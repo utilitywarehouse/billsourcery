@@ -10,16 +10,16 @@ import (
 )
 
 type statsProcessor struct {
-	filecount    int
-	commentcount int
-	othercount   int
+	FileCount    int `json:"file-count"`
+	CommentCount int `json:"comment-chars"`
+	OtherCount   int `json:"other-chars"`
 }
 
 func (lp *statsProcessor) end() error {
-	fmt.Printf("files : %d\n", lp.filecount)
-	fmt.Printf("code bytes  (non-comments) : %d\n", lp.othercount)
-	fmt.Printf("comment bytes : %d\n", lp.commentcount)
-	fmt.Printf("total bytes : %d\n", lp.commentcount+lp.othercount)
+	fmt.Printf("files : %d\n", lp.FileCount)
+	fmt.Printf("code bytes  (non-comments) : %d\n", lp.OtherCount)
+	fmt.Printf("comment bytes : %d\n", lp.CommentCount)
+	fmt.Printf("total bytes : %d\n", lp.CommentCount+lp.OtherCount)
 	return nil
 }
 
@@ -34,7 +34,7 @@ func (lp *statsProcessor) process(path string) error {
 	}
 	defer f.Close()
 
-	lp.filecount++
+	lp.FileCount++
 
 	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
 
@@ -48,9 +48,9 @@ func (lp *statsProcessor) process(path string) error {
 		case equilex.EOF:
 			return nil
 		case equilex.Comment:
-			lp.commentcount += len(lit)
+			lp.CommentCount += len(lit)
 		default:
-			lp.othercount += len(lit)
+			lp.OtherCount += len(lit)
 		}
 
 		switch tok {

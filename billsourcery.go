@@ -32,6 +32,15 @@ func main() {
 		}
 	})
 
+	app.Command("timestats", "Provide stats over time about the source code", func(cmd *cli.Cmd) {
+		cacheDB := cmd.StringOpt("cache-db", os.Getenv("HOME")+"/.billsourcery_timestats_cache", "timestats cache")
+		notBefore := cmd.StringOpt("earliest", "c7937fbe95bbef245d627dccad0dfc4baad35b7c", "Do not include data from before this revision")
+		output := cmd.StringOpt("output", "/tmp/billtimestats.png", "output graph for stats over time")
+		cmd.Action = func() {
+			doProcessAll(*sourceRoot, newTimeStatsProcessor(*cacheDB, *notBefore, *output))
+		}
+	})
+
 	app.Command("strip-comments", "Remove comments from the source files", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			doProcessAll(*sourceRoot, &commentStripper{})
