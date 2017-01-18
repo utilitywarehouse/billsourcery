@@ -24,7 +24,7 @@ func main() {
 
 	var cmdErr error
 
-	app.Command("comment-stats", "Provide stats about comments", func(cmd *cli.Cmd) {
+	app.Command("stats", "Provide basic stats about the source code", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			proc := &statsProcessor{}
 			cmdErr = walkSource(*sourceRoot, proc)
