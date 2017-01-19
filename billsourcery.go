@@ -11,8 +11,11 @@ import (
 
 type processor interface {
 	end() error
+	processAll(sourceRoot string) error
+}
+
+type fileProcessor interface {
 	process(path string) error
-	processAll(path string) error
 }
 
 func main() {
@@ -107,7 +110,7 @@ func doProcessAll(sourceRoot string, proc processor) {
 	}
 }
 
-func walkSource(sourceRoot string, proc processor) error {
+func walkSource(sourceRoot string, proc fileProcessor) error {
 
 	inSourceDir := func(root, path string) bool {
 		relative, err := filepath.Rel(root, path)
