@@ -8,7 +8,17 @@ import (
 	"strings"
 
 	"github.com/jawher/mow.cli"
+
+	"net/http"
+	_ "net/http/pprof"
 )
+
+func init() {
+	go func() {
+		panic(http.ListenAndServe(":6060", nil))
+	}()
+
+}
 
 type processor interface {
 	end() error
