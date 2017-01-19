@@ -95,12 +95,15 @@ func main() {
 }
 
 func doProcess(sourceRoot string, proc processor) {
-	cmdErr := walkSource(sourceRoot, proc)
-	if cmdErr != nil {
-		log.Fatal(cmdErr)
+	err := walkSource(sourceRoot, proc)
+
+	if err == nil {
+		err = proc.end()
 	}
 
-	proc.end()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func walkSource(sourceRoot string, proc processor) error {
