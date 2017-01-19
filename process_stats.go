@@ -23,6 +23,10 @@ func (lp *statsProcessor) end() error {
 	return nil
 }
 
+func (lp *statsProcessor) processAll(sourceRoot string) error {
+	return walkSource(sourceRoot, lp)
+}
+
 func (lp *statsProcessor) process(path string) error {
 	f, err := os.Open(path)
 	if err != nil {

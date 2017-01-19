@@ -27,6 +27,9 @@ func (ex *executions) end() error {
 	return nil
 }
 
+func (m *executions) processAll(sourceRoot string) error {
+	return walkSource(sourceRoot, m)
+}
 func (ex *executions) process(path string) error {
 	f, err := os.Open(path)
 	if err != nil {

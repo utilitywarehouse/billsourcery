@@ -20,6 +20,10 @@ func (ex *pubProcs) end() error {
 	return nil
 }
 
+func (lp *pubProcs) processAll(sourceRoot string) error {
+	return walkSource(sourceRoot, lp)
+}
+
 func (ex *pubProcs) process(path string) error {
 	f, err := os.Open(path)
 	if err != nil {

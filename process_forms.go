@@ -17,6 +17,9 @@ func (m *forms) end() error {
 	return nil
 }
 
+func (m *forms) processAll(sourceRoot string) error {
+	return walkSource(sourceRoot, m)
+}
 func (m *forms) process(path string) error {
 	dir, file := filepath.Split(path)
 	if strings.HasSuffix(dir, "/Forms/") {

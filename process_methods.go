@@ -17,6 +17,10 @@ func (m *methods) end() error {
 	return nil
 }
 
+func (m *methods) processAll(sourceRoot string) error {
+	return walkSource(sourceRoot, m)
+}
+
 func (m *methods) process(path string) error {
 	dir, file := filepath.Split(path)
 	if strings.HasSuffix(dir, "/Methods/") {

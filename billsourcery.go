@@ -12,6 +12,7 @@ import (
 type processor interface {
 	end() error
 	process(path string) error
+	processAll(path string) error
 }
 
 func main() {
@@ -24,67 +25,67 @@ func main() {
 
 	app.Command("stats", "Provide basic stats about the source code", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			doProcess(*sourceRoot, &statsProcessor{})
+			doProcessAll(*sourceRoot, &statsProcessor{})
 		}
 	})
 
 	app.Command("strip-comments", "Remove comments from the source files", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			doProcess(*sourceRoot, &commentStripper{})
+			doProcessAll(*sourceRoot, &commentStripper{})
 		}
 	})
 
 	app.Command("string-constants", "Dump all \" delimited string constants found in the source, one per line, to stdout (multi-line strings not included)", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			doProcess(*sourceRoot, &stringConsts{})
+			doProcessAll(*sourceRoot, &stringConsts{})
 		}
 	})
 
 	app.Command("executes", "List execute statements. Incomplete", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			doProcess(*sourceRoot, newExecutions())
+			doProcessAll(*sourceRoot, newExecutions())
 		}
 	})
 
 	app.Command("public-procs", "List public procedures and public externals", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			doProcess(*sourceRoot, &pubProcs{})
+			doProcessAll(*sourceRoot, &pubProcs{})
 		}
 	})
 
 	app.Command("methods", "List method names", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			doProcess(*sourceRoot, &methods{})
+			doProcessAll(*sourceRoot, &methods{})
 		}
 	})
 
 	app.Command("forms", "List form names", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			doProcess(*sourceRoot, &forms{})
+			doProcessAll(*sourceRoot, &forms{})
 		}
 	})
 
 	app.Command("processes", "List process names", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			doProcess(*sourceRoot, &processes{})
+			doProcessAll(*sourceRoot, &processes{})
 		}
 	})
 
 	app.Command("reports", "List report names", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			doProcess(*sourceRoot, &reports{})
+			doProcessAll(*sourceRoot, &reports{})
 		}
 	})
 
 	app.Command("lexer-check", "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			doProcess(*sourceRoot, &lexCheck{})
+			doProcessAll(*sourceRoot, &lexCheck{})
 		}
 	})
 
 	app.Command("identifiers", "List identifier tokens, one per line.  This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
-			doProcess(*sourceRoot, &identifiers{})
+			doProcessAll(*sourceRoot, &identifiers{})
 		}
 	})
 
@@ -94,8 +95,8 @@ func main() {
 
 }
 
-func doProcess(sourceRoot string, proc processor) {
-	err := walkSource(sourceRoot, proc)
+func doProcessAll(sourceRoot string, proc processor) {
+	err := proc.processAll(sourceRoot)
 
 	if err == nil {
 		err = proc.end()
