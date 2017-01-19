@@ -26,7 +26,10 @@ func (lp *commentStripper) process(path string) error {
 	var out bytes.Buffer
 
 	for {
-		tok, lit := l.Scan()
+		tok, lit, err := l.Scan()
+		if err != nil {
+			return err
+		}
 
 		switch tok {
 		case equilex.Comment:

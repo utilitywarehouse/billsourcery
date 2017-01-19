@@ -41,7 +41,10 @@ func (ex *executions) process(path string) error {
 	var stmt *statement
 
 	for {
-		tok, lit := l.Scan()
+		tok, lit, err := l.Scan()
+		if err != nil {
+			return err
+		}
 
 		switch tok {
 		case equilex.EOF:

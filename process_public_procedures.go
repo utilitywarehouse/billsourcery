@@ -34,7 +34,10 @@ func (ex *pubProcs) process(path string) error {
 	atStart := true
 
 	for {
-		tok, lit := l.Scan()
+		tok, lit, err := l.Scan()
+		if err != nil {
+			return err
+		}
 
 		switch tok {
 		case equilex.EOF:

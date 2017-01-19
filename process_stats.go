@@ -35,7 +35,10 @@ func (lp *statsProcessor) process(path string) error {
 	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
 
 	for {
-		tok, lit := l.Scan()
+		tok, lit, err := l.Scan()
+		if err != nil {
+			return err
+		}
 
 		switch tok {
 		case equilex.EOF:
