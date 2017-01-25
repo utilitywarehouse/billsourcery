@@ -18,8 +18,8 @@ import (
 	"github.com/gonum/plot/vg/draw"
 )
 
-func newTimeStatsProcessor(cacheDB string, earliest string, outfile string) *timeStatsProcessor {
-	return &timeStatsProcessor{cacheDB: cacheDB, earliestRevision: earliest, outfile: outfile}
+func newTimeStatsImageProcessor(cacheDB string, earliest string, outfile string) *timeStatsImageProcessor {
+	return &timeStatsImageProcessor{cacheDB: cacheDB, earliestRevision: earliest, outfile: outfile}
 }
 
 type timeStatsEntry struct {
@@ -32,7 +32,7 @@ type cacheEntry struct {
 	Err       string          `json:"error,omitempty"`
 }
 
-type timeStatsProcessor struct {
+type timeStatsImageProcessor struct {
 	AllStats []*timeStatsEntry
 
 	cacheDB          string
@@ -40,7 +40,7 @@ type timeStatsProcessor struct {
 	outfile          string
 }
 
-func (lp *timeStatsProcessor) processAll(sourceRoot string) error {
+func (lp *timeStatsImageProcessor) processAll(sourceRoot string) error {
 	cmd := exec.Command("git", "log", `--format=%H %cI`)
 	cmd.Dir = sourceRoot
 	out, err := cmd.Output()
@@ -164,7 +164,7 @@ func (tsc timestatsCache) get(rev string) (*cacheEntry, error) {
 	return s, nil
 }
 
-func (lp *timeStatsProcessor) end() error {
+func (lp *timeStatsImageProcessor) end() error {
 
 	ts := lp.AllStats
 
