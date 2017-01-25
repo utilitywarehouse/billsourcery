@@ -171,8 +171,6 @@ func (lp *timeStatsImageProcessor) end() error {
 	plotter.DefaultLineStyle.Width = vg.Points(1)
 	plotter.DefaultGlyphStyle.Radius = vg.Points(3)
 
-	xticks := plot.TimeTicks{Format: "2006-01-02"}
-
 	data := make(plotter.XYs, len(ts))
 	for i := range data {
 		res := ts[i].Results
@@ -187,7 +185,7 @@ func (lp *timeStatsImageProcessor) end() error {
 	p.Title.Text = "Bill code base"
 
 	p.X.Label.Text = "Date"
-	p.X.Tick.Marker = xticks
+	p.X.Tick.Marker = plot.TimeTicks{Format: "2006-01-02"}
 	p.Add(plotter.NewGrid())
 
 	p.Y.Label.Text = "Code size\n(characters)"
