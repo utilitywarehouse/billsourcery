@@ -177,6 +177,7 @@ func (lp *timeStatsImageProcessor) end() error {
 		return err
 	}
 	p.Title.Text = "Bill code base"
+	p.Legend.Top = true
 
 	p.X.Label.Text = "Date"
 	p.X.Tick.Marker = plot.TimeTicks{Format: "2006-01-02"}
@@ -201,6 +202,7 @@ func (lp *timeStatsImageProcessor) end() error {
 	totalPoints.Shape = draw.CircleGlyph{}
 	totalPoints.Color = color.RGBA{B: 255, A: 255}
 	p.Add(totalLine, totalPoints)
+	p.Legend.Add("total", totalLine)
 
 	// create output
 	err = p.Save(30*vg.Centimeter, 15*vg.Centimeter, lp.outfile)
