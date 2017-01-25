@@ -166,17 +166,11 @@ func (tsc timestatsCache) get(rev string) (*cacheEntry, error) {
 
 func (lp *timeStatsImageProcessor) end() error {
 
+	// set up graph
 	ts := lp.AllStats
 
 	plotter.DefaultLineStyle.Width = vg.Points(1)
 	plotter.DefaultGlyphStyle.Radius = vg.Points(3)
-
-	data := make(plotter.XYs, len(ts))
-	for i := range data {
-		res := ts[i].Results
-		data[i].X = float64(ts[i].Time.Unix())
-		data[i].Y = float64(res.CommentCount + res.OtherCount)
-	}
 
 	p, err := plot.New()
 	if err != nil {
@@ -191,16 +185,24 @@ func (lp *timeStatsImageProcessor) end() error {
 	p.Y.Label.Text = "Code size\n(characters)"
 	p.Y.Tick.Marker = &IntTicker{}
 
-	line, points, err := plotter.NewLinePoints(data)
+	// totals data
+	totalData := make(plotter.XYs, len(ts))
+	for i := range totalData {
+		res := ts[i].Results
+		totalData[i].X = float64(ts[i].Time.Unix())
+		totalData[i].Y = float64(res.CommentCount + res.OtherCount)
+	}
+
+	totalLine, totalPoints, err := plotter.NewLinePoints(totalData)
 	if err != nil {
 		return err
 	}
-	line.Color = color.RGBA{G: 255, A: 255}
-	points.Shape = draw.CircleGlyph{}
-	points.Color = color.RGBA{B: 255, A: 255}
+	totalLine.Color = color.RGBA{G: 255, A: 255}
+	totalPoints.Shape = draw.CircleGlyph{}
+	totalPoints.Color = color.RGBA{B: 255, A: 255}
+	p.Add(totalLine, totalPoints)
 
-	p.Add(line, points)
-
+	// create output
 	err = p.Save(30*vg.Centimeter, 15*vg.Centimeter, lp.outfile)
 	if err != nil {
 		return err
