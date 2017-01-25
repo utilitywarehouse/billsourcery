@@ -1,7 +1,7 @@
 billsourcery
 ============
 
-Perform various operations on the Bill source code
+Perform various operations on the Bill source code, mostly for analysical purposes.
 
 Installation
 ------------
