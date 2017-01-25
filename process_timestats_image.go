@@ -240,6 +240,8 @@ func (lp *timeStatsImageProcessor) end() error {
 	p.Add(totalLine, totalPoints)
 	p.Legend.Add("total", totalLine)
 
+	p.Y.Min = 0
+
 	// create output
 	err = p.Save(30*vg.Centimeter, 15*vg.Centimeter, lp.outfile)
 	if err != nil {
