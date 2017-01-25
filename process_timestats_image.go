@@ -186,6 +186,24 @@ func (lp *timeStatsImageProcessor) end() error {
 	p.Y.Label.Text = "Code size\n(characters)"
 	p.Y.Tick.Marker = &IntTicker{}
 
+	// code data
+	codeData := make(plotter.XYs, len(ts))
+	for i := range codeData {
+		res := ts[i].Results
+		codeData[i].X = float64(ts[i].Time.Unix())
+		codeData[i].Y = float64(res.OtherCount)
+	}
+
+	codeLine, codePoints, err := plotter.NewLinePoints(codeData)
+	if err != nil {
+		return err
+	}
+	codeLine.Color = color.RGBA{B: 255, A: 255}
+	codePoints.Shape = draw.CircleGlyph{}
+	codePoints.Color = color.RGBA{B: 255, A: 255}
+	p.Add(codeLine, codePoints)
+	p.Legend.Add("code", codeLine)
+
 	// totals data
 	totalData := make(plotter.XYs, len(ts))
 	for i := range totalData {
