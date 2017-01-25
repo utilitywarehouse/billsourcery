@@ -204,6 +204,24 @@ func (lp *timeStatsImageProcessor) end() error {
 	p.Add(codeLine, codePoints)
 	p.Legend.Add("code", codeLine)
 
+	// comments data
+	commentsData := make(plotter.XYs, len(ts))
+	for i := range commentsData {
+		res := ts[i].Results
+		commentsData[i].X = float64(ts[i].Time.Unix())
+		commentsData[i].Y = float64(res.CommentCount)
+	}
+
+	commentsLine, commentsPoints, err := plotter.NewLinePoints(commentsData)
+	if err != nil {
+		return err
+	}
+	commentsLine.Color = color.RGBA{R: 255, A: 255}
+	commentsPoints.Shape = draw.CircleGlyph{}
+	commentsPoints.Color = color.RGBA{B: 255, A: 255}
+	p.Add(commentsLine, commentsPoints)
+	p.Legend.Add("comments", commentsLine)
+
 	// totals data
 	totalData := make(plotter.XYs, len(ts))
 	for i := range totalData {
