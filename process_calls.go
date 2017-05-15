@@ -24,12 +24,12 @@ type calls struct {
 
 func (c *calls) end() error {
 	for _, m := range c.m.methods {
-		fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForDotfile(m), encodeIDForDotfile(m), m)
-		fmt.Printf("SET %s :Method ;\n", encodeIDForDotfile(m))
+		fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(m), encodeIDForNeo(m), m)
+		fmt.Printf("SET %s :Method ;\n", encodeIDForNeo(m))
 	}
 	for _, f := range c.f.forms {
-		fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForDotfile(f), encodeIDForDotfile(f), f)
-		fmt.Printf("SET %s :Form ;\n", encodeIDForDotfile(f))
+		fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(f), encodeIDForNeo(f), f)
+		fmt.Printf("SET %s :Form ;\n", encodeIDForNeo(f))
 	}
 	for _, s := range c.p.stmts {
 		switch {
@@ -39,8 +39,8 @@ func (c *calls) end() error {
 				log.Panicf("bug : %v %v", value.tok, value.lit)
 			}
 			m := value.lit
-			fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForDotfile(m), encodeIDForDotfile(m), m)
-			fmt.Printf("SET %s :PublicProcedure ;\n", encodeIDForDotfile(m))
+			fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(m), encodeIDForNeo(m), m)
+			fmt.Printf("SET %s :PublicProcedure ;\n", encodeIDForNeo(m))
 		default:
 			log.Printf("skipping procedure %v\n", s)
 		}
@@ -78,7 +78,7 @@ func (c *calls) end() error {
 				}
 
 				//log.Printf("from and to are %v %v\n", from, to)
-				fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeIDForDotfile(from), encodeIDForDotfile(to))
+				fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeIDForNeo(from), encodeIDForNeo(to))
 			default:
 				for i, t := range toks {
 					log.Printf("tok %d is %v\n", i, t.lit)
@@ -111,7 +111,7 @@ func (c *calls) process(path string) error {
 
 }
 
-func encodeIDForDotfile(in string) string {
+func encodeIDForNeo(in string) string {
 	f := func(r rune) rune {
 		if r >= 'a' && r <= 'z' {
 			return r
