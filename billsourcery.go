@@ -129,6 +129,19 @@ func main() {
 		}
 	})
 
+	app.Command("calls-stats-table", "Produce a table of module call counts", func(cmd *cli.Cmd) {
+		dsn := cmd.String(cli.StringOpt{
+			Name:      "dsn",
+			Desc:      "bill pg mirror data source name",
+			Value:     "postgres://root:xxxxxxxx@hlsv0pgrs01.tp.private:5432/bill?sslmode=disable",
+			EnvVar:    "BILL_PG_MIRROR_DSN",
+			HideValue: true,
+		})
+		cmd.Action = func() {
+			callStatsTable(*sourceRoot, *dsn)
+		}
+	})
+
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
