@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 
@@ -24,7 +25,14 @@ func main() {
 
 	app := cli.App("billsourcery", "Bill source code attempted wizardry")
 
-	sourceRoot := app.StringOpt("source-root", "/home/mgarton/work/uw-bill-source-history", "Root directory for equinox source. Subdirs Methods/ Forms/ etc are expected")
+	user, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	dir := filepath.Join(user.HomeDir, "work/uw-bill-source-history")
+
+	sourceRoot := app.StringOpt("source-root", dir, "Root directory for equinox source. Subdirs Methods/ Forms/ etc are expected")
 
 	app.Command("stats", "Provide basic stats about the source code", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
