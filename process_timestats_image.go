@@ -18,8 +18,8 @@ import (
 	"github.com/gonum/plot/vg/draw"
 )
 
-func newTimeStatsImageProcessor(cacheDB string, earliest string, outfile string) *timeStatsImageProcessor {
-	return &timeStatsImageProcessor{cacheDB: cacheDB, earliestRevision: earliest, outfile: outfile}
+func newTimeStatsImageProcessor(cacheDB string, earliest string, branches []string, outfile string) *timeStatsImageProcessor {
+	return &timeStatsImageProcessor{AllStats: make(map[string][]*timeStatsEntry), cacheDB: cacheDB, earliestRevision: earliest, branches: branches, outfile: outfile}
 }
 
 type timeStatsEntry struct {
@@ -33,15 +33,32 @@ type cacheEntry struct {
 }
 
 type timeStatsImageProcessor struct {
-	AllStats []*timeStatsEntry
+	AllStats map[string][]*timeStatsEntry
 
 	cacheDB          string
 	earliestRevision string
+	branches         []string
 	outfile          string
 }
 
 func (lp *timeStatsImageProcessor) processAll(sourceRoot string) error {
-	cmd := exec.Command("git", "log", `--format=%H %cI`)
+	for _, b := range lp.branches {
+		if err := lp.processBranch(b, sourceRoot); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (lp *timeStatsImageProcessor) processBranch(branch string, sourceRoot string) error {
+	cmd := exec.Command("git", "checkout", branch)
+	cmd.Dir = sourceRoot
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+
+	cmd = exec.Command("git", "log", `--format=%H %cI`)
 	cmd.Dir = sourceRoot
 	out, err := cmd.Output()
 	if err != nil {
@@ -68,7 +85,7 @@ func (lp *timeStatsImageProcessor) processAll(sourceRoot string) error {
 			if c.Err != "" {
 				log.Printf("cached stats for revision %s is an error\n", revision)
 			} else {
-				lp.AllStats = append(lp.AllStats, c.TimeStats)
+				lp.AllStats[branch] = append(lp.AllStats[branch], c.TimeStats)
 			}
 		} else {
 
@@ -89,7 +106,7 @@ func (lp *timeStatsImageProcessor) processAll(sourceRoot string) error {
 				cs.put(revision, &cacheEntry{Err: err.Error()})
 			} else {
 				tse = &timeStatsEntry{date, sp}
-				lp.AllStats = append(lp.AllStats, tse)
+				lp.AllStats[branch] = append(lp.AllStats[branch], tse)
 				cs.put(revision, &cacheEntry{TimeStats: tse})
 			}
 		}
@@ -167,7 +184,6 @@ func (tsc timestatsCache) get(rev string) (*cacheEntry, error) {
 func (lp *timeStatsImageProcessor) end() error {
 
 	// set up graph
-	ts := lp.AllStats
 
 	plotter.DefaultLineStyle.Width = vg.Points(1)
 	plotter.DefaultGlyphStyle.Radius = vg.Points(1)
@@ -186,61 +202,65 @@ func (lp *timeStatsImageProcessor) end() error {
 	p.Y.Label.Text = "Code size\n(characters)"
 	p.Y.Tick.Marker = &IntTicker{}
 
-	// code data
-	codeData := make(plotter.XYs, len(ts))
-	for i := range codeData {
-		res := ts[i].Results
-		codeData[i].X = float64(ts[i].Time.Unix())
-		codeData[i].Y = float64(res.OtherCount)
-	}
+	for branch, ts := range lp.AllStats {
 
-	codeLine, codePoints, err := plotter.NewLinePoints(codeData)
-	if err != nil {
-		return err
-	}
-	codeLine.Color = color.RGBA{B: 255, A: 255}
-	codePoints.Shape = draw.CircleGlyph{}
-	codePoints.Color = color.RGBA{B: 255, A: 255}
-	p.Add(codeLine, codePoints)
-	p.Legend.Add("code", codeLine)
+		// code data
+		codeData := make(plotter.XYs, len(ts))
+		for i := range codeData {
+			res := ts[i].Results
+			codeData[i].X = float64(ts[i].Time.Unix())
+			codeData[i].Y = float64(res.OtherCount)
+		}
 
-	// comments data
-	commentsData := make(plotter.XYs, len(ts))
-	for i := range commentsData {
-		res := ts[i].Results
-		commentsData[i].X = float64(ts[i].Time.Unix())
-		commentsData[i].Y = float64(res.CommentCount)
-	}
+		codeLine, codePoints, err := plotter.NewLinePoints(codeData)
+		if err != nil {
+			return err
+		}
+		codeLine.Color = color.RGBA{B: 255, A: 255}
+		codePoints.Shape = draw.CircleGlyph{}
+		codePoints.Color = color.RGBA{B: 255, A: 255}
+		p.Add(codeLine, codePoints)
+		p.Legend.Add(fmt.Sprintf("code (%s)", branch), codeLine)
 
-	commentsLine, commentsPoints, err := plotter.NewLinePoints(commentsData)
-	if err != nil {
-		return err
-	}
-	commentsLine.Color = color.RGBA{R: 255, A: 255}
-	commentsPoints.Shape = draw.CircleGlyph{}
-	commentsPoints.Color = color.RGBA{B: 255, A: 255}
-	p.Add(commentsLine, commentsPoints)
-	p.Legend.Add("comments", commentsLine)
+		// comments data
+		commentsData := make(plotter.XYs, len(ts))
+		for i := range commentsData {
+			res := ts[i].Results
+			commentsData[i].X = float64(ts[i].Time.Unix())
+			commentsData[i].Y = float64(res.CommentCount)
+		}
 
-	// totals data
-	totalData := make(plotter.XYs, len(ts))
-	for i := range totalData {
-		res := ts[i].Results
-		totalData[i].X = float64(ts[i].Time.Unix())
-		totalData[i].Y = float64(res.CommentCount + res.OtherCount)
-	}
+		commentsLine, commentsPoints, err := plotter.NewLinePoints(commentsData)
+		if err != nil {
+			return err
+		}
+		commentsLine.Color = color.RGBA{R: 255, A: 255}
+		commentsPoints.Shape = draw.CircleGlyph{}
+		commentsPoints.Color = color.RGBA{B: 255, A: 255}
+		p.Add(commentsLine, commentsPoints)
+		p.Legend.Add(fmt.Sprintf("comments (%s)", branch), commentsLine)
 
-	totalLine, totalPoints, err := plotter.NewLinePoints(totalData)
-	if err != nil {
-		return err
-	}
-	totalLine.Color = color.RGBA{G: 255, A: 255}
-	totalPoints.Shape = draw.CircleGlyph{}
-	totalPoints.Color = color.RGBA{B: 255, A: 255}
-	p.Add(totalLine, totalPoints)
-	p.Legend.Add("total", totalLine)
+		// totals data
+		totalData := make(plotter.XYs, len(ts))
+		for i := range totalData {
+			res := ts[i].Results
+			totalData[i].X = float64(ts[i].Time.Unix())
+			totalData[i].Y = float64(res.CommentCount + res.OtherCount)
+		}
 
-	p.Y.Min = 0
+		totalLine, totalPoints, err := plotter.NewLinePoints(totalData)
+		if err != nil {
+			return err
+		}
+		totalLine.Color = color.RGBA{G: 255, A: 255}
+		totalPoints.Shape = draw.CircleGlyph{}
+		totalPoints.Color = color.RGBA{B: 255, A: 255}
+		p.Add(totalLine, totalPoints)
+		p.Legend.Add(fmt.Sprintf("total (%s)", branch), totalLine)
+
+		p.Y.Min = 0
+
+	}
 
 	// create output
 	err = p.Save(30*vg.Centimeter, 15*vg.Centimeter, lp.outfile)
