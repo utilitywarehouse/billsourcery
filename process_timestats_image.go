@@ -170,7 +170,7 @@ func (lp *timeStatsImageProcessor) end() error {
 	ts := lp.AllStats
 
 	plotter.DefaultLineStyle.Width = vg.Points(1)
-	plotter.DefaultGlyphStyle.Radius = vg.Points(3)
+	plotter.DefaultGlyphStyle.Radius = vg.Points(1)
 
 	p, err := plot.New()
 	if err != nil {
