@@ -99,6 +99,12 @@ func main() {
 		}
 	})
 
+	app.Command("all-modules", "List all modules (not procedures)", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			doProcessAll(*sourceRoot, &allModules{})
+		}
+	})
+
 	app.Command("calls-neo", "Produce neo4j cypher statements to create bill call graph. (Procedures not supported properly yet)", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			doProcessAll(*sourceRoot, newCalls())
