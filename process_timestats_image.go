@@ -253,8 +253,10 @@ func (lp *timeStatsImageProcessor) end() error {
 			return err
 		}
 		totalLine.Color = color.RGBA{G: 255, A: 255}
+		totalLine.Width = 0.1 * vg.Millimeter
 		totalPoints.Shape = draw.CircleGlyph{}
 		totalPoints.Color = color.RGBA{B: 255, A: 255}
+		totalPoints.Radius = 0.1 * vg.Millimeter
 		p.Add(totalLine, totalPoints)
 		p.Legend.Add(fmt.Sprintf("total (%s)", branch), totalLine)
 
