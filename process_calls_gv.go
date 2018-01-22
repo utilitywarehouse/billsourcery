@@ -29,7 +29,7 @@ func (c *gvcalls) end() error {
 		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightblue\"]\n", encodeIDForDotfile(m), m)
 	}
 	for from, e := range c.e.stmts {
-		from = filenameToIdentifier(from)
+		fromModule := moduleFromFullFilename(from)
 		for _, stmt := range e {
 			toks := stmt.tokens
 			for toks[0].tok != equilex.Execute {
@@ -61,7 +61,7 @@ func (c *gvcalls) end() error {
 				}
 
 				//	log.Printf("from and to are %v %v\n", from, to)
-				fmt.Printf("\t%s -> %s\n", encodeIDForDotfile(from), encodeIDForDotfile(to))
+				fmt.Printf("\t%s -> %s\n", encodeIDForDotfile(fromModule), encodeIDForDotfile(module{to, mtMethod}))
 			default:
 				for i, t := range toks {
 					log.Printf("tok %d is %v\n", i, t.lit)
@@ -89,7 +89,9 @@ func (c *gvcalls) process(path string) error {
 
 }
 
-func encodeIDForDotfile(in string) string {
+func encodeIDForDotfile(mod module) string {
+	in := mod.moduleName
+	// TODO: encode type in encoded name
 	return "a" + hex.EncodeToString([]byte(in))
 	//return url.QueryEscape(in)
 	return in

@@ -7,7 +7,7 @@ import (
 )
 
 type reports struct {
-	reports []string
+	reports []module
 }
 
 func (m *reports) end() error {
@@ -24,7 +24,7 @@ func (m *reports) processAll(sourceRoot string) error {
 func (m *reports) process(path string) error {
 	dir, file := filepath.Split(path)
 	if strings.HasSuffix(dir, "/Reports/") {
-		m.reports = append(m.reports, filenameToIdentifier(file))
+		m.reports = append(m.reports, moduleFromFullFilename(file))
 	}
 	return nil
 }

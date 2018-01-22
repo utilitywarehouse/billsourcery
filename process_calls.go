@@ -39,14 +39,15 @@ func (c *calls) end() error {
 				log.Panicf("bug : %v %v", value.tok, value.lit)
 			}
 			m := value.lit
-			fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(m), encodeIDForNeo(m), m)
-			fmt.Printf("SET %s :PublicProcedure ;\n", encodeIDForNeo(m))
+			mod := module{m, mtProcedure}
+			fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(mod), encodeIDForNeo(mod), mod)
+			fmt.Printf("SET %s :PublicProcedure ;\n", encodeIDForNeo(mod))
 		default:
 			log.Printf("skipping procedure %v\n", s)
 		}
 	}
 	for from, e := range c.e.stmts {
-		from = filenameToIdentifier(from)
+		fromModule := moduleFromFullFilename(from)
 		for _, stmt := range e {
 			toks := stmt.tokens
 			for toks[0].tok != equilex.Execute {
@@ -78,7 +79,7 @@ func (c *calls) end() error {
 				}
 
 				//log.Printf("from and to are %v %v\n", from, to)
-				fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeIDForNeo(from), encodeIDForNeo(to))
+				fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeIDForNeo(fromModule), encodeIDForNeo(module{to, mtMethod}))
 			default:
 				for i, t := range toks {
 					log.Printf("tok %d is %v\n", i, t.lit)
@@ -111,7 +112,9 @@ func (c *calls) process(path string) error {
 
 }
 
-func encodeIDForNeo(in string) string {
+func encodeIDForNeo(mod module) string {
+	in := mod.moduleName
+	// TODO: add type into encoded name
 	f := func(r rune) rune {
 		if r >= 'a' && r <= 'z' {
 			return r

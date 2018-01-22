@@ -7,7 +7,7 @@ import (
 )
 
 type processes struct {
-	procs []string
+	procs []module
 }
 
 func (m *processes) end() error {
@@ -24,7 +24,7 @@ func (m *processes) processAll(sourceRoot string) error {
 func (m *processes) process(path string) error {
 	dir, file := filepath.Split(path)
 	if strings.HasSuffix(dir, "/Processes/") {
-		m.procs = append(m.procs, filenameToIdentifier(file))
+		m.procs = append(m.procs, moduleFromFullFilename(file))
 	}
 	return nil
 }

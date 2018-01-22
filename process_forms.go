@@ -7,7 +7,7 @@ import (
 )
 
 type forms struct {
-	forms []string
+	forms []module
 }
 
 func (m *forms) end() error {
@@ -23,7 +23,7 @@ func (m *forms) processAll(sourceRoot string) error {
 func (m *forms) process(path string) error {
 	dir, file := filepath.Split(path)
 	if strings.HasSuffix(dir, "/Forms/") {
-		m.forms = append(m.forms, filenameToIdentifier(file))
+		m.forms = append(m.forms, moduleFromFullFilename(file))
 	}
 	return nil
 }

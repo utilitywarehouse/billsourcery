@@ -7,7 +7,7 @@ import (
 )
 
 type methods struct {
-	methods []string
+	methods []module
 }
 
 func (m *methods) end() error {
@@ -24,7 +24,7 @@ func (m *methods) processAll(sourceRoot string) error {
 func (m *methods) process(path string) error {
 	dir, file := filepath.Split(path)
 	if strings.HasSuffix(dir, "/Methods/") {
-		m.methods = append(m.methods, filenameToIdentifier(file))
+		m.methods = append(m.methods, moduleFromFullFilename(file))
 	}
 	return nil
 }

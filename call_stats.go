@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 	"log"
 	"os"
 	"sort"
@@ -58,7 +57,7 @@ func callStatsTable(sourceRoot string, dsn string) {
 
 	type tableEntry struct {
 		ModuleName string
-		ModuleType string
+		ModuleType moduleType
 		CallCount  int
 	}
 
@@ -74,28 +73,7 @@ func callStatsTable(sourceRoot string, dsn string) {
 	tw := tablewriter.NewWriter(os.Stdout)
 	tw.SetHeader([]string{"module", "type", "call count"})
 	for _, res := range results {
-		tw.Append([]string{res.ModuleName, res.ModuleType, strconv.Itoa(res.CallCount)})
+		tw.Append([]string{res.ModuleName, res.ModuleType.String(), strconv.Itoa(res.CallCount)})
 	}
 	tw.Render()
-}
-
-func mapModExt(in string) string {
-	switch in {
-	case "exp":
-		return "Exports"
-	case "frm":
-		return "Forms"
-	case "imp":
-		return "Imports"
-	case "jcl":
-		return "Methods"
-		//	return "Procedures"
-		//	return "Processes"
-	case "qry":
-		return "Queries"
-	case "rep":
-		return "Reports"
-	default:
-		panic(fmt.Sprintf("can't map module extension to type : %s\n", in))
-	}
 }
