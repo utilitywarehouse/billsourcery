@@ -51,6 +51,16 @@ func main() {
 		}
 	})
 
+	app.Command("timestats-bq", "Provide stats over time about the source code and upload to bigquery", func(cmd *cli.Cmd) {
+		cacheDB := cmd.StringOpt("cache-db", os.Getenv("HOME")+"/.billsourcery_timestats_cache", "timestats cache")
+		notBefore := cmd.StringOpt("earliest", "c7937fbe95bbef245d627dccad0dfc4baad35b7c", "Do not include data from before this revision")
+		branchesCs := cmd.StringOpt("branches", "master", "which branches to cover (comma separated, no spaces")
+		cmd.Action = func() {
+			branches := strings.Split(*branchesCs, ",")
+			doProcessAll(*sourceRoot, newTimeStatsBQProcessor(*cacheDB, *notBefore, branches))
+		}
+	})
+
 	app.Command("strip-comments", "Remove comments from the source files", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			doProcessAll(*sourceRoot, &commentStripper{})
