@@ -12,11 +12,12 @@ import (
 )
 
 func newTimeStatsImageProcessor(cacheDB string, earliest string, branches []string, outfile string) *timeStatsImageProcessor {
-	return &timeStatsImageProcessor{timeStatsProcessor{AllStats: make(map[string][]*timeStatsEntry), cacheDB: cacheDB, earliestRevision: earliest, branches: branches, outfile: outfile}}
+	return &timeStatsImageProcessor{timeStatsProcessor{AllStats: make(map[string][]*timeStatsEntry), cacheDB: cacheDB, earliestRevision: earliest, branches: branches}, outfile}
 }
 
 type timeStatsImageProcessor struct {
 	timeStatsProcessor
+	outfile string
 }
 
 type IntTicker struct{}

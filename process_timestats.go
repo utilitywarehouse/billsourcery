@@ -28,7 +28,6 @@ type timeStatsProcessor struct {
 	cacheDB          string
 	earliestRevision string
 	branches         []string
-	outfile          string
 }
 
 func (lp *timeStatsProcessor) processAll(sourceRoot string) error {
