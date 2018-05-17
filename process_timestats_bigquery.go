@@ -60,24 +60,49 @@ func (lp *timeStatsBQProcessor) end() error {
 	log.Printf("starting bigquery stuff\n")
 	tab := ds.Table("bill_source_stats")
 
-	// temporary
-	//	tab.Delete(context.Background())
-	//	time.Sleep(10 * time.Second)
-
-	if _, err := tab.Metadata(context.Background()); err != nil {
+	log.Println("about to delete table")
+	if err := tab.Delete(context.Background()); err != nil {
 		if !strings.Contains(err.Error(), "notFound") {
 			return err
 		}
-		/*
-			log.Printf("table was not found. creating %s.\n", tab.TableID)
-			s, err := bigquery.InferSchema(rows[0])
-			if err != nil {
-				return err
-			}
-			//	if err := tab.Create(context.Background(), s); err != nil {
-			//		return err
-			//	}
-		*/
+	}
+delLoop:
+	for {
+		_, err := tab.Metadata(context.Background())
+		switch {
+		case err == nil:
+			// still exists.
+			time.Sleep(2 * time.Second)
+		case strings.Contains(err.Error(), "notFound"):
+			break delLoop
+		default:
+			return err
+		}
+	}
+	log.Println("about to create table")
+	s, err := bigquery.InferSchema(rows[0])
+	if err != nil {
+		return err
+	}
+	if err := tab.Create(context.Background(), &bigquery.TableMetadata{
+		//		Name:   "tempbillstuff",
+		Schema: s,
+	}); err != nil {
+		return err
+	}
+
+existLoop:
+	for {
+		_, err := tab.Metadata(context.Background())
+		switch {
+		case err == nil:
+			// exists.
+			break existLoop
+		case strings.Contains(err.Error(), "notFound"):
+			time.Sleep(2 * time.Second)
+		default:
+			return err
+		}
 	}
 
 	log.Printf("about to upload data\n")
