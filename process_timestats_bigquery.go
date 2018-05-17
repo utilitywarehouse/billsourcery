@@ -68,14 +68,16 @@ func (lp *timeStatsBQProcessor) end() error {
 		if !strings.Contains(err.Error(), "notFound") {
 			return err
 		}
-		log.Printf("table was not found. creating %s.\n", tab.TableID)
-		s, err := bigquery.InferSchema(rows[0])
-		if err != nil {
-			return err
-		}
-		if err := tab.Create(context.Background(), s); err != nil {
-			return err
-		}
+		/*
+			log.Printf("table was not found. creating %s.\n", tab.TableID)
+			s, err := bigquery.InferSchema(rows[0])
+			if err != nil {
+				return err
+			}
+			//	if err := tab.Create(context.Background(), s); err != nil {
+			//		return err
+			//	}
+		*/
 	}
 
 	log.Printf("about to upload data\n")
