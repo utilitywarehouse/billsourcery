@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"log"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/bigquery"
@@ -52,74 +51,19 @@ func (lp *timeStatsBQProcessor) end() error {
 	}
 
 	log.Printf("starting bigquery stuff\n")
-	deleteAndRecreate(ctx, rows[0])
 
 	client, err := bigquery.NewClient(ctx, "uw-net")
 	if err != nil {
 		return err
 	}
+	deleteAndRecreateBQ(ctx, client, "tmp", "bill_source_stats", rows[0])
+
 	tab := client.Dataset("tmp").Table("bill_source_stats")
 
 	log.Printf("about to upload data\n")
 	if err := tab.Uploader().Put(context.Background(), rows); err != nil {
 		return err
 	}
-
-	return nil
-}
-
-func deleteAndRecreate(ctx context.Context, example interface{}) error {
-	client, err := bigquery.NewClient(ctx, "uw-net")
-	if err != nil {
-		return err
-	}
-	tab := client.Dataset("tmp").Table("bill_source_stats")
-
-	log.Println("about to delete table")
-	if err := tab.Delete(context.Background()); err != nil {
-		if !strings.Contains(err.Error(), "notFound") {
-			return err
-		}
-	}
-delLoop:
-	for {
-		_, err := tab.Metadata(context.Background())
-		switch {
-		case err == nil:
-			// still exists.
-			time.Sleep(2 * time.Second)
-		case strings.Contains(err.Error(), "notFound"):
-			break delLoop
-		default:
-			return err
-		}
-	}
-	log.Println("about to create table")
-	s, err := bigquery.InferSchema(example)
-	if err != nil {
-		return err
-	}
-	if err := tab.Create(context.Background(), &bigquery.TableMetadata{
-		Schema: s,
-	}); err != nil {
-		return err
-	}
-
-existLoop:
-	for {
-		_, err := tab.Metadata(context.Background())
-		switch {
-		case err == nil:
-			// exists.
-			break existLoop
-		case strings.Contains(err.Error(), "notFound"):
-			time.Sleep(2 * time.Second)
-		default:
-			return err
-		}
-	}
-	log.Printf("waiting 30s to avoid bigquery madness")
-	time.Sleep(30 * time.Second)
 
 	return nil
 }
