@@ -30,12 +30,6 @@ func (lp *timeStatsBQProcessor) end() error {
 	// set GOOGLE_APPLICATION_CREDENTIALS to json containing service account key.
 
 	ctx := context.Background()
-	client, err := bigquery.NewClient(ctx, "uw-net")
-	if err != nil {
-		return err
-	}
-
-	ds := client.Dataset("tmp")
 
 	var rows []bqStatsRow
 
@@ -58,7 +52,28 @@ func (lp *timeStatsBQProcessor) end() error {
 	}
 
 	log.Printf("starting bigquery stuff\n")
-	tab := ds.Table("bill_source_stats")
+	deleteAndRecreate(ctx, rows[0])
+
+	client, err := bigquery.NewClient(ctx, "uw-net")
+	if err != nil {
+		return err
+	}
+	tab := client.Dataset("tmp").Table("bill_source_stats")
+
+	log.Printf("about to upload data\n")
+	if err := tab.Uploader().Put(context.Background(), rows); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func deleteAndRecreate(ctx context.Context, example interface{}) error {
+	client, err := bigquery.NewClient(ctx, "uw-net")
+	if err != nil {
+		return err
+	}
+	tab := client.Dataset("tmp").Table("bill_source_stats")
 
 	log.Println("about to delete table")
 	if err := tab.Delete(context.Background()); err != nil {
@@ -80,12 +95,11 @@ delLoop:
 		}
 	}
 	log.Println("about to create table")
-	s, err := bigquery.InferSchema(rows[0])
+	s, err := bigquery.InferSchema(example)
 	if err != nil {
 		return err
 	}
 	if err := tab.Create(context.Background(), &bigquery.TableMetadata{
-		//		Name:   "tempbillstuff",
 		Schema: s,
 	}); err != nil {
 		return err
@@ -104,11 +118,8 @@ existLoop:
 			return err
 		}
 	}
-
-	log.Printf("about to upload data\n")
-	if err := tab.Uploader().Put(context.Background(), rows); err != nil {
-		return err
-	}
+	log.Printf("waiting 30s to avoid bigquery madness")
+	time.Sleep(30 * time.Second)
 
 	return nil
 }
