@@ -51,10 +51,10 @@ func main() {
 	})
 
 	app.Command("timestats-image", "Provide stats over time about the source code in a png/jpg/svg", func(cmd *cli.Cmd) {
-		cacheDB := cmd.StringOpt("cache-db", os.Getenv("HOME")+"/.billsourcery_timestats_cache", "timestats cache")
+		cacheDB := cmd.StringOpt("cache-db", defaultCacheName(), "timestats cache")
 		notBefore := cmd.StringOpt("earliest", "c7937fbe95bbef245d627dccad0dfc4baad35b7c", "Do not include data from before this revision")
 		branchesCs := cmd.StringOpt("branches", "master", "which branches to cover (comma separated, no spaces")
-		output := cmd.StringOpt("output", "/tmp/billtimestats.png", "output graph for stats over time")
+		output := cmd.StringOpt("output", defaultOutputName(), "output graph for stats over time")
 		cmd.Action = func() {
 			branches := strings.Split(*branchesCs, ",")
 			doProcessAll(*sourceRoot, newTimeStatsImageProcessor(*cacheDB, *notBefore, branches, *output))
@@ -62,7 +62,7 @@ func main() {
 	})
 
 	app.Command("timestats-bq-raw", "Provide raw (per file) stats over time about the source code and upload to bigquery", func(cmd *cli.Cmd) {
-		cacheDB := cmd.StringOpt("cache-db", os.Getenv("HOME")+"/.billsourcery_timestats_cache", "timestats cache")
+		cacheDB := cmd.StringOpt("cache-db", defaultCacheName(), "timestats cache")
 		notBefore := cmd.StringOpt("earliest", "c7937fbe95bbef245d627dccad0dfc4baad35b7c", "Do not include data from before this revision")
 		branchesCs := cmd.StringOpt("branches", "master", "which branches to cover (comma separated, no spaces")
 		cmd.Action = func() {
