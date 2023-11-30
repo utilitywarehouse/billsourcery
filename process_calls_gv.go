@@ -50,7 +50,15 @@ func (c *gvcalls) end() error {
 			case equilex.Import:
 			case equilex.EmptyDatabase:
 			case equilex.MethodSwap:
+			case equilex.MethodSetup:
 			case equilex.OptimiseDatabase:
+			case equilex.OptimiseTable:
+			case equilex.OptimiseTableIndexes:
+			case equilex.OptimiseDatabaseIndexes:
+			case equilex.OptimiseAllDatabases:
+			case equilex.OptimiseAllDatabasesIndexes:
+			case equilex.OptimiseDatabaseHelper:
+			case equilex.ConvertAllDatabases:
 			case equilex.Method:
 				to := toks[4].lit
 
