@@ -39,10 +39,8 @@ func (lp *timeStatsImageProcessor) end() error {
 	plotter.DefaultLineStyle.Width = vg.Points(1)
 	plotter.DefaultGlyphStyle.Radius = vg.Points(1)
 
-	p, err := plot.New()
-	if err != nil {
-		return err
-	}
+	p := plot.New()
+
 	p.Title.Text = "Bill code base"
 	p.Legend.Top = true
 
@@ -116,7 +114,7 @@ func (lp *timeStatsImageProcessor) end() error {
 	}
 
 	// create output
-	err = p.Save(30*vg.Centimeter, 15*vg.Centimeter, lp.outfile)
+	err := p.Save(30*vg.Centimeter, 15*vg.Centimeter, lp.outfile)
 	if err != nil {
 		return err
 	}
