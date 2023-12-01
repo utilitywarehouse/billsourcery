@@ -10,7 +10,6 @@ import (
 )
 
 func deleteAndRecreateBQ(ctx context.Context, client *bigquery.Client, dsName string, tableName string, example interface{}) error {
-
 	tab := client.Dataset(dsName).Table(tableName)
 
 	_, err := tab.Metadata(ctx)

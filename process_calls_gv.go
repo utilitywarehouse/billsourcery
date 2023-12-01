@@ -86,13 +86,12 @@ func (c *gvcalls) process(path string) error {
 		return err
 	}
 	return c.p.process(path)
-
 }
 
 func encodeIDForDotfile(mod module) string {
 	in := mod.moduleName
 	// TODO: encode type in encoded name
 	return "a" + hex.EncodeToString([]byte(in))
-	//return url.QueryEscape(in)
+	// return url.QueryEscape(in)
 	return in
 }

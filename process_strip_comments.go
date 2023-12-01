@@ -42,7 +42,7 @@ func (lp *commentStripper) process(path string) error {
 			if err != nil {
 				return err
 			}
-			if err := ioutil.WriteFile(path, cp1252Bytes, 0644); err != nil {
+			if err := ioutil.WriteFile(path, cp1252Bytes, 0o644); err != nil {
 				return err
 			}
 			return nil

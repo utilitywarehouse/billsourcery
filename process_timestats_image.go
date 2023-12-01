@@ -33,7 +33,6 @@ func (it *IntTicker) Ticks(min float64, max float64) []plot.Tick {
 }
 
 func (lp *timeStatsImageProcessor) end() error {
-
 	// set up graph
 
 	plotter.DefaultLineStyle.Width = vg.Points(1)

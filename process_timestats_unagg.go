@@ -86,7 +86,7 @@ func (lp *rawTimeStatsProcessor) processBranch(branch string, sourceRoot string)
 			if c.Err != "" {
 				log.Printf("cached stats for revision %s is an error\n", revision)
 			} else {
-				//log.Printf("appending for branch %s and count is %d\n", branch, len(c.TimeStats.Entries))
+				// log.Printf("appending for branch %s and count is %d\n", branch, len(c.TimeStats.Entries))
 				lp.AllStats[branch] = append(lp.AllStats[branch], c.TimeStats)
 			}
 		} else {
@@ -190,7 +190,7 @@ type rawstatsCache struct {
 }
 
 func (tsc *rawstatsCache) put(revision string, c *rawCacheEntry) error {
-	db, err := bolt.Open(tsc.filename, 0600, nil)
+	db, err := bolt.Open(tsc.filename, 0o600, nil)
 	if err != nil {
 		return err
 	}
@@ -215,7 +215,7 @@ func (tsc *rawstatsCache) put(revision string, c *rawCacheEntry) error {
 }
 
 func (tsc rawstatsCache) get(rev string) (*rawCacheEntry, error) {
-	db, err := bolt.Open(tsc.filename, 0600, nil)
+	db, err := bolt.Open(tsc.filename, 0o600, nil)
 	if err != nil {
 		return nil, err
 	}

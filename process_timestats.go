@@ -119,7 +119,7 @@ type timestatsCache struct {
 }
 
 func (tsc *timestatsCache) put(revision string, c *cacheEntry) error {
-	db, err := bolt.Open(tsc.filename, 0600, nil)
+	db, err := bolt.Open(tsc.filename, 0o600, nil)
 	if err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func (tsc *timestatsCache) put(revision string, c *cacheEntry) error {
 }
 
 func (tsc timestatsCache) get(rev string) (*cacheEntry, error) {
-	db, err := bolt.Open(tsc.filename, 0600, nil)
+	db, err := bolt.Open(tsc.filename, 0o600, nil)
 	if err != nil {
 		return nil, err
 	}

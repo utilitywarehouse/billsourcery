@@ -29,7 +29,6 @@ type bqRawStatsRow struct {
 }
 
 func (lp *timeStatsUnaggBQProcessor) end() error {
-
 	// set GOOGLE_APPLICATION_CREDENTIALS to json containing service account key.
 
 	ctx := context.Background()
@@ -78,7 +77,7 @@ func (lp *timeStatsUnaggBQProcessor) end() error {
 	}
 	cw.Flush()
 
-	//ioutil.WriteFile("/tmp/bill_source_stats_raw.csv", buf.Bytes(), 0644)
+	// ioutil.WriteFile("/tmp/bill_source_stats_raw.csv", buf.Bytes(), 0644)
 	//	log.Printf("%s\n", buf.Bytes())
 
 	rs := bigquery.NewReaderSource(&buf)

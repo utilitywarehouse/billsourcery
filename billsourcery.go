@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -9,7 +10,6 @@ import (
 
 	"github.com/jawher/mow.cli"
 
-	"net/http"
 	_ "net/http/pprof"
 )
 
@@ -17,7 +17,6 @@ func init() {
 	go func() {
 		panic(http.ListenAndServe(":6060", nil))
 	}()
-
 }
 
 type processor interface {
@@ -30,7 +29,6 @@ type fileProcessor interface {
 }
 
 func main() {
-
 	log.SetFlags(0)
 
 	app := cli.App("billsourcery", "Bill source code attempted wizardry")
@@ -165,7 +163,6 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
 func doProcessAll(sourceRoot string, proc processor) {
@@ -181,7 +178,6 @@ func doProcessAll(sourceRoot string, proc processor) {
 }
 
 func walkSource(sourceRoot string, proc fileProcessor) error {
-
 	inSourceDir := func(root, path string) bool {
 		relative, err := filepath.Rel(root, path)
 		if err != nil {

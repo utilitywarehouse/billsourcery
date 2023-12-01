@@ -23,6 +23,7 @@ func (lp *lexCheck) end() error {
 func (m *lexCheck) processAll(sourceRoot string) error {
 	return walkSource(sourceRoot, m)
 }
+
 func (lp *lexCheck) process(path string) error {
 	f, err := os.Open(path)
 	if err != nil {

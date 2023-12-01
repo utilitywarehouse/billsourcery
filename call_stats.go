@@ -13,7 +13,6 @@ import (
 )
 
 func callStatsTable(sourceRoot string, dsn string) {
-
 	all := &allModules{}
 	all.processAll(sourceRoot)
 

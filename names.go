@@ -1,3 +1,4 @@
+//go:build !windows
 // +build !windows
 
 package main
@@ -7,7 +8,7 @@ import (
 )
 
 func defaultCacheName() string {
-	return	os.Getenv("HOME")+"/.billsourcery_timestats_cache"
+	return os.Getenv("HOME") + "/.billsourcery_timestats_cache"
 }
 
 func defaultOutputName() string {
