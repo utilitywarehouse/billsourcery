@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+
 	//"net/url"
 	"strings"
 
@@ -17,6 +18,7 @@ func newGVCalls() *gvcalls {
 }
 
 type gvcalls struct {
+	f forms
 	m methods
 	p pubProcs
 	e *executions
@@ -24,6 +26,9 @@ type gvcalls struct {
 
 func (c *gvcalls) end() error {
 	fmt.Println("digraph calls {")
+	for _, m := range c.f.forms {
+		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightgreen\"]\n", encodeIDForDotfile(m), m)
+	}
 	for _, m := range c.m.methods {
 		//		log.Printf("method is %v \n", m)
 		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightblue\"]\n", encodeIDForDotfile(m), m)
@@ -87,6 +92,9 @@ func (c *gvcalls) processAll(sourceRoot string) error {
 }
 
 func (c *gvcalls) process(path string) error {
+	if err := c.f.process(path); err != nil {
+		return err
+	}
 	if err := c.m.process(path); err != nil {
 		return err
 	}
