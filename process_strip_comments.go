@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"io/ioutil"
 	"os"
 
 	"github.com/utilitywarehouse/equilex"
@@ -42,7 +41,7 @@ func (lp *commentStripper) process(path string) error {
 			if err != nil {
 				return err
 			}
-			if err := ioutil.WriteFile(path, cp1252Bytes, 0o644); err != nil {
+			if err := os.WriteFile(path, cp1252Bytes, 0o644); err != nil {
 				return err
 			}
 			return nil
