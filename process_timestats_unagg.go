@@ -105,11 +105,15 @@ func (lp *rawTimeStatsProcessor) processBranch(branch string, sourceRoot string)
 			var tse *rawTimeStatsSummary
 			if err != nil {
 				log.Printf("revision %s was in error (will still cache): %s\n", revision, err.Error())
-				cs.put(revision, &rawCacheEntry{Err: err.Error()})
+				if err := cs.put(revision, &rawCacheEntry{Err: err.Error()}); err != nil {
+					return err
+				}
 			} else {
 				tse = &rawTimeStatsSummary{date, blp.stats}
 				lp.AllStats[branch] = append(lp.AllStats[branch], tse)
-				cs.put(revision, &rawCacheEntry{TimeStats: tse})
+				if err := cs.put(revision, &rawCacheEntry{TimeStats: tse}); err != nil {
+					return err
+				}
 			}
 
 		}

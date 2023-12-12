@@ -64,7 +64,9 @@ func (lp *timeStatsUnaggBQProcessor) end() error {
 
 	tableName := "bill_source_stats_raw"
 
-	deleteAndRecreateBQ(ctx, client, "tmp", tableName, rows[0])
+	if err := deleteAndRecreateBQ(ctx, client, "tmp", tableName, rows[0]); err != nil {
+		return err
+	}
 
 	tab := client.Dataset("tmp").Table(tableName)
 
@@ -73,7 +75,9 @@ func (lp *timeStatsUnaggBQProcessor) end() error {
 	var buf bytes.Buffer
 	cw := csv.NewWriter(&buf)
 	for _, r := range rows {
-		cw.Write([]string{r.Branch, r.Date.Format(format), r.ModuleName, r.ModuleType, strconv.Itoa(r.CommentCount), strconv.Itoa(r.OtherCount)})
+		if err := cw.Write([]string{r.Branch, r.Date.Format(format), r.ModuleName, r.ModuleType, strconv.Itoa(r.CommentCount), strconv.Itoa(r.OtherCount)}); err != nil {
+			return err
+		}
 	}
 	cw.Flush()
 

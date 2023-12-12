@@ -92,11 +92,15 @@ func (lp *timeStatsProcessor) processBranch(branch string, sourceRoot string) er
 			var tse *timeStatsEntry
 			if err != nil {
 				log.Printf("revision %s was in error (will still cache): %s\n", revision, err.Error())
-				cs.put(revision, &cacheEntry{Err: err.Error()})
+				if err := cs.put(revision, &cacheEntry{Err: err.Error()}); err != nil {
+					return err
+				}
 			} else {
 				tse = &timeStatsEntry{date, sp}
 				lp.AllStats[branch] = append(lp.AllStats[branch], tse)
-				cs.put(revision, &cacheEntry{TimeStats: tse})
+				if err := cs.put(revision, &cacheEntry{TimeStats: tse}); err != nil {
+					return err
+				}
 			}
 		}
 		if revision == lp.earliestRevision {

@@ -14,7 +14,9 @@ import (
 
 func callStatsTable(sourceRoot string, dsn string) {
 	all := &allModules{}
-	all.processAll(sourceRoot)
+	if err := all.processAll(sourceRoot); err != nil {
+		log.Fatal(err)
+	}
 
 	// map of module name to call count
 	counts := make(map[module]int)
