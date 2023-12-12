@@ -108,6 +108,4 @@ func encodeIDForDotfile(mod module) string {
 	in := mod.moduleName
 	// TODO: encode type in encoded name
 	return "a" + hex.EncodeToString([]byte(in))
-	// return url.QueryEscape(in)
-	return in
 }
