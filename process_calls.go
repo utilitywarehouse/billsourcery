@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+
 	//"net/url"
 	"strings"
 
@@ -82,9 +83,7 @@ func (c *calls) end() error {
 
 				to = strings.ToLower(to)
 				to = to[1 : len(to)-1]
-				if strings.HasSuffix(to, ".jcl") {
-					to = to[0 : len(to)-4]
-				}
+				to = strings.TrimSuffix(to, ".jcl")
 
 				// log.Printf("from and to are %v %v\n", from, to)
 				fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeIDForNeo(fromModule), encodeIDForNeo(module{to, mtMethod}))

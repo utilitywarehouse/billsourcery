@@ -69,9 +69,7 @@ func (c *gvcalls) end() error {
 
 				to = strings.ToLower(to)
 				to = to[1 : len(to)-1]
-				if strings.HasSuffix(to, ".jcl") {
-					to = to[0 : len(to)-4]
-				}
+				to = strings.TrimSuffix(to, ".jcl")
 
 				//	log.Printf("from and to are %v %v\n", from, to)
 				fmt.Printf("\t%s -> %s\n", encodeIDForDotfile(fromModule), encodeIDForDotfile(module{to, mtMethod}))
