@@ -16,11 +16,6 @@ func (m module) String() string {
 	return m.moduleName
 }
 
-func moduleFromFullSQLName(fullname string) module {
-	spl := strings.Split(strings.ToLower(fullname), ".")
-	return module{moduleName: spl[0], moduleType: mapModExt(spl[1])}
-}
-
 func moduleFromFullFilename(filename string) module {
 	filename = strings.ToLower(filename)
 	var mt moduleType
