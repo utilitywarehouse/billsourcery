@@ -46,7 +46,7 @@ func (ex *pubProcs) process(path string) error {
 		switch tok {
 		case equilex.EOF:
 			if stmt != nil {
-				fmt.Println(stmt.String())
+				ex.stmts = append(ex.stmts, stmt)
 			}
 			return nil
 		case equilex.WS:
