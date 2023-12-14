@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"slices"
 
 	//"net/url"
 	"strings"
@@ -73,7 +74,18 @@ func (c *gvcalls) end() error {
 					to = strings.TrimSuffix(to, ".jcl")
 
 					//	log.Printf("from and to are %v %v\n", from, to)
-					fmt.Printf("\t%s -> %s\n", encodeIDForDotfile(fromModule), encodeIDForDotfile(module{to, mtMethod}))
+
+					from_enc := encodeIDForDotfile(fromModule)
+					to_mod := module{to, mtMethod}
+
+					if !slices.Contains(c.m.methods, to_mod) {
+						log.Printf("method %v is called from %v but not found - skipping\n", to_mod, fromModule)
+					} else {
+
+						to_enc := encodeIDForDotfile(to_mod)
+
+						fmt.Printf("\t%s -> %s\n", from_enc, to_enc)
+					}
 				} else {
 					log.Printf("call from %s to variable method '%s' - skipping", fromModule, to)
 				}
