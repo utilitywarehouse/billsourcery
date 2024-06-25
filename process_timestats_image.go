@@ -84,7 +84,7 @@ func (lp *timeStatsImageProcessor) end() error {
 		}
 		commentsLine.Color = color.RGBA{R: 255, A: 255}
 		commentsPoints.Shape = draw.CircleGlyph{}
-		commentsPoints.Color = color.RGBA{B: 255, A: 255}
+		commentsPoints.Color = color.RGBA{R: 255, A: 255}
 		p.Add(commentsLine, commentsPoints)
 		p.Legend.Add(fmt.Sprintf("comments (%s)", branch), commentsLine)
 
@@ -103,7 +103,7 @@ func (lp *timeStatsImageProcessor) end() error {
 		totalLine.Color = color.RGBA{G: 255, A: 255}
 		totalLine.Width = 0.1 * vg.Millimeter
 		totalPoints.Shape = draw.CircleGlyph{}
-		totalPoints.Color = color.RGBA{B: 255, A: 255}
+		totalPoints.Color = color.RGBA{G: 255, A: 255}
 		totalPoints.Radius = 0.1 * vg.Millimeter
 		p.Add(totalLine, totalPoints)
 		p.Legend.Add(fmt.Sprintf("total (%s)", branch), totalLine)
