@@ -66,13 +66,18 @@ func (c *gvcalls) end() error {
 			case equilex.ConvertAllDatabases:
 			case equilex.Method:
 				to := toks[4].lit
+				if to[0] == '"' && to[len(to)-1] == '"' {
+					//fmt.Printf("%c  %c", to[0], to[len(to)-1])
+					to = strings.ToLower(to)
+					to = to[1 : len(to)-1]
+					to = strings.TrimSuffix(to, ".jcl")
 
-				to = strings.ToLower(to)
-				to = to[1 : len(to)-1]
-				to = strings.TrimSuffix(to, ".jcl")
+					//	log.Printf("from and to are %v %v\n", from, to)
+					fmt.Printf("\t%s -> %s\n", encodeIDForDotfile(fromModule), encodeIDForDotfile(module{to, mtMethod}))
+				} else {
+					log.Printf("call from %s to variable method '%s' - skipping", fromModule, to)
+				}
 
-				//	log.Printf("from and to are %v %v\n", from, to)
-				fmt.Printf("\t%s -> %s\n", encodeIDForDotfile(fromModule), encodeIDForDotfile(module{to, mtMethod}))
 			default:
 				for i, t := range toks {
 					log.Printf("tok %d is %v\n", i, t.lit)
