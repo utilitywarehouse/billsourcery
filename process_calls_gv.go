@@ -94,7 +94,7 @@ func (c *gvcalls) end() error {
 				for i, t := range toks {
 					log.Printf("tok %d is %v\n", i, t.lit)
 				}
-				return fmt.Errorf("unhandled type : '%#v' for statement %v\n", (toks[2].lit), stmt)
+				return fmt.Errorf("unhandled type : '%#v' for statement %v", (toks[2].lit), stmt)
 			}
 		}
 	}
