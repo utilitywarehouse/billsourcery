@@ -91,6 +91,10 @@ func mapModExt(in string) moduleType {
 		return mtImport
 	case "jcl":
 		return mtMethod
+	case "jc":
+		return mtMethod
+	case "j":
+		return mtMethod
 		//	return mtProcedure
 		//	return mtProcess
 	case "qry":
