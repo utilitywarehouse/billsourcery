@@ -87,6 +87,10 @@ func mapModExt(in string) moduleType {
 		return mtExport
 	case "frm":
 		return mtForm
+	case "fr":
+		return mtForm
+	case "f":
+		return mtForm
 	case "imp":
 		return mtImport
 	case "jcl":
