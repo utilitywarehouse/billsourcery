@@ -12,20 +12,20 @@ import (
 	"github.com/utilitywarehouse/equilex"
 )
 
-func newGVCalls() *gvcalls {
-	return &gvcalls{
+func newGVCalls() *callsDot {
+	return &callsDot{
 		e: newExecutions(),
 	}
 }
 
-type gvcalls struct {
+type callsDot struct {
 	f forms
 	m methods
 	p pubProcs
 	e *executions
 }
 
-func (c *gvcalls) end() error {
+func (c *callsDot) end() error {
 	fmt.Println("digraph calls {")
 	for _, m := range c.f.forms {
 		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightgreen\"]\n", encodeIDForDotfile(m), m)
@@ -102,11 +102,11 @@ func (c *gvcalls) end() error {
 	return nil
 }
 
-func (c *gvcalls) processAll(sourceRoot string) error {
+func (c *callsDot) processAll(sourceRoot string) error {
 	return walkSource(sourceRoot, c)
 }
 
-func (c *gvcalls) process(path string) error {
+func (c *callsDot) process(path string) error {
 	if err := c.f.process(path); err != nil {
 		return err
 	}
