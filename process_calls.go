@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
+	"slices"
 
 	//"net/url"
 	"strings"
@@ -14,7 +15,7 @@ import (
 type graphOutput interface {
 	Start() error
 	End() error
-	UpsertMethod(m *module) error
+	UpsertMethod(m *module, missing bool) error
 	UpsertForm(m *module) error
 	UpsertPublicProcedure(m *module) error
 	UpsertCall(from *module, to *module) error
@@ -22,15 +23,17 @@ type graphOutput interface {
 
 func newGVCalls() *calls {
 	return &calls{
-		e:      newExecutions(),
-		output: &DotGraphOutput{},
+		e:              newExecutions(),
+		output:         &DotGraphOutput{},
+		missingMethods: make(map[module]struct{}),
 	}
 }
 
 func newCalls() *calls {
 	return &calls{
-		e:      newExecutions(),
-		output: &NeoGraphOutput{},
+		e:              newExecutions(),
+		output:         &NeoGraphOutput{},
+		missingMethods: make(map[module]struct{}),
 	}
 }
 
@@ -39,6 +42,8 @@ type calls struct {
 	m methods
 	p pubProcs
 	e *executions
+
+	missingMethods map[module]struct{}
 
 	output graphOutput
 }
@@ -55,8 +60,12 @@ func (o *DotGraphOutput) End() error {
 	return nil
 }
 
-func (o *DotGraphOutput) UpsertMethod(m *module) error {
-	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightblue\"]\n", encodeIDForDotfile(m), m)
+func (o *DotGraphOutput) UpsertMethod(m *module, missing bool) error {
+	if missing {
+		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"red\"]\n", encodeIDForDotfile(m), m)
+	} else {
+		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightblue\"]\n", encodeIDForDotfile(m), m)
+	}
 	return nil
 }
 
@@ -85,9 +94,14 @@ func (o *NeoGraphOutput) End() error {
 	return nil
 }
 
-func (o *NeoGraphOutput) UpsertMethod(m *module) error {
+func (o *NeoGraphOutput) UpsertMethod(m *module, missing bool) error {
 	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(m), encodeIDForNeo(m), m)
-	fmt.Printf("SET %s :Method ;\n", encodeIDForNeo(m))
+
+	if missing {
+		fmt.Printf("SET %s :Method \nSET %s : Missing;\n", encodeIDForNeo(m), encodeIDForNeo(m))
+	} else {
+		fmt.Printf("SET %s :Method ;\n", encodeIDForNeo(m))
+	}
 	return nil
 }
 
@@ -113,7 +127,7 @@ func (c *calls) end() error {
 		return err
 	}
 	for _, m := range c.m.methods {
-		if err := c.output.UpsertMethod(&m); err != nil {
+		if err := c.output.UpsertMethod(&m, false); err != nil {
 			return err
 		}
 	}
@@ -176,7 +190,14 @@ func (c *calls) end() error {
 					to = strings.ToLower(to)
 					to = to[1 : len(to)-1]
 					to = strings.TrimSuffix(to, ".jcl")
-					if err := c.output.UpsertCall(&fromModule, &module{to, mtMethod}); err != nil {
+
+					to_mod := module{to, mtMethod}
+
+					if !slices.Contains(c.m.methods, to_mod) {
+						c.missingMethods[to_mod] = struct{}{}
+					}
+
+					if err := c.output.UpsertCall(&fromModule, &to_mod); err != nil {
 						return err
 					}
 				} else {
@@ -190,6 +211,13 @@ func (c *calls) end() error {
 			}
 		}
 	}
+
+	for m := range c.missingMethods {
+		if err := c.output.UpsertMethod(&m, true); err != nil {
+			return err
+		}
+	}
+
 	if err := c.output.End(); err != nil {
 		return err
 	}
