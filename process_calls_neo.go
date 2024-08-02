@@ -10,20 +10,20 @@ import (
 	"github.com/utilitywarehouse/equilex"
 )
 
-func newCalls() *calls {
-	return &calls{
+func newCalls() *callsNeo {
+	return &callsNeo{
 		e: newExecutions(),
 	}
 }
 
-type calls struct {
+type callsNeo struct {
 	m methods
 	p pubProcs
 	e *executions
 	f forms
 }
 
-func (c *calls) end() error {
+func (c *callsNeo) end() error {
 	for _, m := range c.m.methods {
 		fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(m), encodeIDForNeo(m), m)
 		fmt.Printf("SET %s :Method ;\n", encodeIDForNeo(m))
@@ -98,11 +98,11 @@ func (c *calls) end() error {
 	return nil
 }
 
-func (c *calls) processAll(sourceRoot string) error {
+func (c *callsNeo) processAll(sourceRoot string) error {
 	return walkSource(sourceRoot, c)
 }
 
-func (c *calls) process(path string) error {
+func (c *callsNeo) process(path string) error {
 	if err := c.m.process(path); err != nil {
 		return err
 	}
