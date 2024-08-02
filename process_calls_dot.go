@@ -34,6 +34,21 @@ func (c *callsDot) end() error {
 		//		log.Printf("method is %v \n", m)
 		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightblue\"]\n", encodeIDForDotfile(m), m)
 	}
+	for _, s := range c.p.stmts {
+		switch {
+		case s.tokens[0].tok == equilex.Public && s.tokens[1].tok == equilex.WS && s.tokens[2].tok == equilex.Procedure && s.tokens[3].tok == equilex.WS:
+			value := s.tokens[4]
+			if value.tok != equilex.Identifier {
+				log.Panicf("bug : %v %v", value.tok, value.lit)
+			}
+			m := value.lit
+			mod := module{m, mtProcedure}
+			fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"yellow\"]\n", encodeIDForDotfile(mod), mod)
+
+		default:
+			log.Printf("skipping procedure %v\n", s)
+		}
+	}
 	for from, e := range c.e.stmts {
 		fromModule := moduleFromFullFilename(from)
 		for _, stmt := range e {
