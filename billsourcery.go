@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/jawher/mow.cli"
+	cli "github.com/jawher/mow.cli"
 
 	_ "net/http/pprof"
 )

@@ -25,14 +25,37 @@ type callsDot struct {
 	e *executions
 }
 
+func (c *callsDot) upsertMethod(m *module) error {
+	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightblue\"]\n", encodeIDForDotfile(m), m)
+	return nil
+}
+
+func (c *callsDot) upsertForm(f *module) error {
+	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightgreen\"]\n", encodeIDForDotfile(f), f)
+	return nil
+}
+
+func (c *callsDot) upsertPublicProcedure(mod *module) error {
+	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"yellow\"]\n", encodeIDForDotfile(mod), mod)
+	return nil
+}
+
+func (c *callsDot) upsertCall(from *module, to *module) error {
+	fmt.Printf("\t%s -> %s\n", encodeIDForDotfile(from), encodeIDForDotfile(to))
+	return nil
+}
+
 func (c *callsDot) end() error {
 	fmt.Println("digraph calls {")
-	for _, f := range c.f.forms {
-		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightgreen\"]\n", encodeIDForDotfile(f), f)
-	}
 	for _, m := range c.m.methods {
-		//		log.Printf("method is %v \n", m)
-		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightblue\"]\n", encodeIDForDotfile(m), m)
+		if err := c.upsertMethod(&m); err != nil {
+			return err
+		}
+	}
+	for _, f := range c.f.forms {
+		if err := c.upsertForm(&f); err != nil {
+			return err
+		}
 	}
 	for _, s := range c.p.stmts {
 		switch {
@@ -43,8 +66,9 @@ func (c *callsDot) end() error {
 			}
 			m := value.lit
 			mod := module{m, mtProcedure}
-			fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"yellow\"]\n", encodeIDForDotfile(mod), mod)
-
+			if err := c.upsertPublicProcedure(&mod); err != nil {
+				return err
+			}
 		default:
 			log.Printf("skipping procedure %v\n", s)
 		}
@@ -87,21 +111,18 @@ func (c *callsDot) end() error {
 					to = to[1 : len(to)-1]
 					to = strings.TrimSuffix(to, ".jcl")
 
-					from_enc := encodeIDForDotfile(fromModule)
 					to_mod := module{to, mtMethod}
 
 					if !slices.Contains(c.m.methods, to_mod) {
 						log.Printf("method %v is called from %v but not found - skipping\n", to_mod, fromModule)
 					} else {
-
-						to_enc := encodeIDForDotfile(to_mod)
-
-						fmt.Printf("\t%s -> %s\n", from_enc, to_enc)
+						if err := c.upsertCall(&fromModule, &to_mod); err != nil {
+							return err
+						}
 					}
 				} else {
 					log.Printf("call from %s to variable method '%s' - skipping", fromModule, to)
 				}
-
 			default:
 				for i, t := range toks {
 					log.Printf("tok %d is %v\n", i, t.lit)
@@ -128,10 +149,13 @@ func (c *callsDot) process(path string) error {
 	if err := c.e.process(path); err != nil {
 		return err
 	}
-	return c.p.process(path)
+	if err := c.p.process(path); err != nil {
+		return err
+	}
+	return nil
 }
 
-func encodeIDForDotfile(mod module) string {
+func encodeIDForDotfile(mod *module) string {
 	in := mod.moduleName
 	// TODO: encode type in encoded name
 	return "a" + hex.EncodeToString([]byte(in))

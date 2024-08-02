@@ -23,14 +23,39 @@ type callsNeo struct {
 	f forms
 }
 
+func (c *callsNeo) upsertMethod(m *module) error {
+	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(m), encodeIDForNeo(m), m)
+	fmt.Printf("SET %s :Method ;\n", encodeIDForNeo(m))
+	return nil
+}
+
+func (c *callsNeo) upsertForm(f *module) error {
+	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(f), encodeIDForNeo(f), f)
+	fmt.Printf("SET %s :Form ;\n", encodeIDForNeo(f))
+	return nil
+}
+
+func (c *callsNeo) upsertPublicProcedure(mod *module) error {
+	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(mod), encodeIDForNeo(mod), mod)
+	fmt.Printf("SET %s :PublicProcedure ;\n", encodeIDForNeo(mod))
+	return nil
+}
+
+func (c *callsNeo) upsertCall(from *module, to *module) error {
+	fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeIDForNeo(from), encodeIDForNeo(to))
+	return nil
+}
+
 func (c *callsNeo) end() error {
 	for _, m := range c.m.methods {
-		fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(m), encodeIDForNeo(m), m)
-		fmt.Printf("SET %s :Method ;\n", encodeIDForNeo(m))
+		if err := c.upsertMethod(&m); err != nil {
+			return err
+		}
 	}
 	for _, f := range c.f.forms {
-		fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(f), encodeIDForNeo(f), f)
-		fmt.Printf("SET %s :Form ;\n", encodeIDForNeo(f))
+		if err := c.upsertForm(&f); err != nil {
+			return err
+		}
 	}
 	for _, s := range c.p.stmts {
 		switch {
@@ -41,8 +66,9 @@ func (c *callsNeo) end() error {
 			}
 			m := value.lit
 			mod := module{m, mtProcedure}
-			fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(mod), encodeIDForNeo(mod), mod)
-			fmt.Printf("SET %s :PublicProcedure ;\n", encodeIDForNeo(mod))
+			if err := c.upsertPublicProcedure(&mod); err != nil {
+				return err
+			}
 		default:
 			log.Printf("skipping procedure %v\n", s)
 		}
@@ -82,12 +108,12 @@ func (c *callsNeo) end() error {
 				to := toks[4].lit
 
 				if to[0] == '"' && to[len(to)-1] == '"' {
-
 					to = strings.ToLower(to)
 					to = to[1 : len(to)-1]
 					to = strings.TrimSuffix(to, ".jcl")
-
-					fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeIDForNeo(fromModule), encodeIDForNeo(module{to, mtMethod}))
+					if err := c.upsertCall(&fromModule, &module{to, mtMethod}); err != nil {
+						return err
+					}
 				} else {
 					log.Printf("call from %s to variable method '%s' - skipping", fromModule, to)
 				}
@@ -107,22 +133,22 @@ func (c *callsNeo) processAll(sourceRoot string) error {
 }
 
 func (c *callsNeo) process(path string) error {
-	if err := c.m.process(path); err != nil {
+	if err := c.f.process(path); err != nil {
 		return err
 	}
-	if err := c.p.process(path); err != nil {
+	if err := c.m.process(path); err != nil {
 		return err
 	}
 	if err := c.e.process(path); err != nil {
 		return err
 	}
-	if err := c.f.process(path); err != nil {
+	if err := c.p.process(path); err != nil {
 		return err
 	}
 	return nil
 }
 
-func encodeIDForNeo(mod module) string {
+func encodeIDForNeo(mod *module) string {
 	in := mod.moduleName
 	// TODO: add type into encoded name
 	f := func(r rune) rune {
