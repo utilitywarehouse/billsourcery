@@ -4,7 +4,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
-	"slices"
 
 	//"net/url"
 	"strings"
@@ -106,19 +105,13 @@ func (c *callsDot) end() error {
 			case equilex.ConvertAllDatabases:
 			case equilex.Method:
 				to := toks[4].lit
+
 				if to[0] == '"' && to[len(to)-1] == '"' {
 					to = strings.ToLower(to)
 					to = to[1 : len(to)-1]
 					to = strings.TrimSuffix(to, ".jcl")
-
-					to_mod := module{to, mtMethod}
-
-					if !slices.Contains(c.m.methods, to_mod) {
-						log.Printf("method %v is called from %v but not found - skipping\n", to_mod, fromModule)
-					} else {
-						if err := c.upsertCall(&fromModule, &to_mod); err != nil {
-							return err
-						}
+					if err := c.upsertCall(&fromModule, &module{to, mtMethod}); err != nil {
+						return err
 					}
 				} else {
 					log.Printf("call from %s to variable method '%s' - skipping", fromModule, to)
