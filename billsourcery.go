@@ -135,6 +135,12 @@ func main() {
 		}
 	})
 
+	app.Command("called-missing-methods", "List any methods that are called but do not exist", func(cmd *cli.Cmd) {
+		cmd.Action = func() {
+			doProcessAll(*sourceRoot, newCalledMissingMethods())
+		}
+	})
+
 	app.Command("lexer-check", "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
 		cmd.Action = func() {
 			doProcessAll(*sourceRoot, &lexCheck{})
