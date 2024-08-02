@@ -87,7 +87,6 @@ func (c *callsNeo) end() error {
 					to = to[1 : len(to)-1]
 					to = strings.TrimSuffix(to, ".jcl")
 
-					// log.Printf("from and to are %v %v\n", from, to)
 					fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeIDForNeo(fromModule), encodeIDForNeo(module{to, mtMethod}))
 				} else {
 					log.Printf("call from %s to variable method '%s' - skipping", fromModule, to)

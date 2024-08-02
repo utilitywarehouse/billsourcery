@@ -83,12 +83,9 @@ func (c *callsDot) end() error {
 			case equilex.Method:
 				to := toks[4].lit
 				if to[0] == '"' && to[len(to)-1] == '"' {
-					//fmt.Printf("%c  %c", to[0], to[len(to)-1])
 					to = strings.ToLower(to)
 					to = to[1 : len(to)-1]
 					to = strings.TrimSuffix(to, ".jcl")
-
-					//	log.Printf("from and to are %v %v\n", from, to)
 
 					from_enc := encodeIDForDotfile(fromModule)
 					to_mod := module{to, mtMethod}
