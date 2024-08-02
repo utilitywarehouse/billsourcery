@@ -27,8 +27,8 @@ type callsDot struct {
 
 func (c *callsDot) end() error {
 	fmt.Println("digraph calls {")
-	for _, m := range c.f.forms {
-		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightgreen\"]\n", encodeIDForDotfile(m), m)
+	for _, f := range c.f.forms {
+		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightgreen\"]\n", encodeIDForDotfile(f), f)
 	}
 	for _, m := range c.m.methods {
 		//		log.Printf("method is %v \n", m)
