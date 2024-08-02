@@ -11,48 +11,114 @@ import (
 	"github.com/utilitywarehouse/equilex"
 )
 
-func newGVCalls() *callsDot {
-	return &callsDot{
-		e: newExecutions(),
+type graphOutput interface {
+	Start() error
+	End() error
+	UpsertMethod(m *module) error
+	UpsertForm(m *module) error
+	UpsertPublicProcedure(m *module) error
+	UpsertCall(from *module, to *module) error
+}
+
+func newGVCalls() *calls {
+	return &calls{
+		e:      newExecutions(),
+		output: &DotGraphOutput{},
 	}
 }
 
-type callsDot struct {
+func newCalls() *calls {
+	return &calls{
+		e:      newExecutions(),
+		output: &NeoGraphOutput{},
+	}
+}
+
+type calls struct {
 	f forms
 	m methods
 	p pubProcs
 	e *executions
+
+	output graphOutput
 }
 
-func (c *callsDot) upsertMethod(m *module) error {
+type DotGraphOutput struct{}
+
+func (o *DotGraphOutput) Start() error {
+	fmt.Println("digraph calls {")
+	return nil
+}
+
+func (o *DotGraphOutput) End() error {
+	fmt.Println("}")
+	return nil
+}
+
+func (o *DotGraphOutput) UpsertMethod(m *module) error {
 	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightblue\"]\n", encodeIDForDotfile(m), m)
 	return nil
 }
 
-func (c *callsDot) upsertForm(f *module) error {
+func (o *DotGraphOutput) UpsertForm(f *module) error {
 	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightgreen\"]\n", encodeIDForDotfile(f), f)
 	return nil
 }
 
-func (c *callsDot) upsertPublicProcedure(mod *module) error {
+func (o *DotGraphOutput) UpsertPublicProcedure(mod *module) error {
 	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"yellow\"]\n", encodeIDForDotfile(mod), mod)
 	return nil
 }
 
-func (c *callsDot) upsertCall(from *module, to *module) error {
+func (o *DotGraphOutput) UpsertCall(from *module, to *module) error {
 	fmt.Printf("\t%s -> %s\n", encodeIDForDotfile(from), encodeIDForDotfile(to))
 	return nil
 }
 
-func (c *callsDot) end() error {
-	fmt.Println("digraph calls {")
+type NeoGraphOutput struct{}
+
+func (o *NeoGraphOutput) Start() error {
+	return nil
+}
+
+func (o *NeoGraphOutput) End() error {
+	return nil
+}
+
+func (o *NeoGraphOutput) UpsertMethod(m *module) error {
+	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(m), encodeIDForNeo(m), m)
+	fmt.Printf("SET %s :Method ;\n", encodeIDForNeo(m))
+	return nil
+}
+
+func (o *NeoGraphOutput) UpsertForm(f *module) error {
+	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(f), encodeIDForNeo(f), f)
+	fmt.Printf("SET %s :Form ;\n", encodeIDForNeo(f))
+	return nil
+}
+
+func (o *NeoGraphOutput) UpsertPublicProcedure(mod *module) error {
+	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(mod), encodeIDForNeo(mod), mod)
+	fmt.Printf("SET %s :PublicProcedure ;\n", encodeIDForNeo(mod))
+	return nil
+}
+
+func (o *NeoGraphOutput) UpsertCall(from *module, to *module) error {
+	fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeIDForNeo(from), encodeIDForNeo(to))
+	return nil
+}
+
+func (c *calls) end() error {
+	if err := c.output.Start(); err != nil {
+		return err
+	}
 	for _, m := range c.m.methods {
-		if err := c.upsertMethod(&m); err != nil {
+		if err := c.output.UpsertMethod(&m); err != nil {
 			return err
 		}
 	}
 	for _, f := range c.f.forms {
-		if err := c.upsertForm(&f); err != nil {
+		if err := c.output.UpsertForm(&f); err != nil {
 			return err
 		}
 	}
@@ -65,7 +131,7 @@ func (c *callsDot) end() error {
 			}
 			m := value.lit
 			mod := module{m, mtProcedure}
-			if err := c.upsertPublicProcedure(&mod); err != nil {
+			if err := c.output.UpsertPublicProcedure(&mod); err != nil {
 				return err
 			}
 		default:
@@ -110,7 +176,7 @@ func (c *callsDot) end() error {
 					to = strings.ToLower(to)
 					to = to[1 : len(to)-1]
 					to = strings.TrimSuffix(to, ".jcl")
-					if err := c.upsertCall(&fromModule, &module{to, mtMethod}); err != nil {
+					if err := c.output.UpsertCall(&fromModule, &module{to, mtMethod}); err != nil {
 						return err
 					}
 				} else {
@@ -124,15 +190,17 @@ func (c *callsDot) end() error {
 			}
 		}
 	}
-	fmt.Println("}")
+	if err := c.output.End(); err != nil {
+		return err
+	}
 	return nil
 }
 
-func (c *callsDot) processAll(sourceRoot string) error {
+func (c *calls) processAll(sourceRoot string) error {
 	return walkSource(sourceRoot, c)
 }
 
-func (c *callsDot) process(path string) error {
+func (c *calls) process(path string) error {
 	if err := c.f.process(path); err != nil {
 		return err
 	}
@@ -152,4 +220,23 @@ func encodeIDForDotfile(mod *module) string {
 	in := mod.moduleName
 	// TODO: encode type in encoded name
 	return "a" + hex.EncodeToString([]byte(in))
+}
+
+func encodeIDForNeo(mod *module) string {
+	in := mod.moduleName
+	// TODO: add type into encoded name
+	f := func(r rune) rune {
+		if r >= 'a' && r <= 'z' {
+			return r
+		}
+		if r >= 'A' && r <= 'Z' {
+			return r
+		}
+		if r >= '0' && r <= '9' {
+			return r
+		}
+		return '_'
+	}
+	in = strings.Map(f, in)
+	return "a_" + in
 }
