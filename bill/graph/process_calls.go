@@ -1,11 +1,13 @@
 package graph
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"log"
 	"os"
-	"path/filepath"
 	"sort"
+	"strconv"
 
 	//"net/url"
 	"strings"
@@ -81,27 +83,196 @@ func (c *calls) writeGraph(output graphOutput) error {
 	return nil
 }
 
-func (c *calls) process(path string) error {
-	dir, file := filepath.Split(path)
-	if strings.HasSuffix(dir, "/Forms/") ||
-		strings.HasSuffix(dir, "/Methods/") ||
-		strings.HasSuffix(dir, "/Exports/") ||
-		strings.HasSuffix(dir, "/Imports/") ||
-		strings.HasSuffix(dir, "/Queries/") ||
-		strings.HasSuffix(dir, "/Reports/") {
-		name, type_ := nodeFromFullFilename(file)
-		node := newNode(name, type_)
-		c.nodes[node.nodeId] = &node
+func (cb *calls) process(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
 	}
 
-	if !strings.HasSuffix(dir, "/Procedures/") {
-		if err := c.processMethodCalls(path); err != nil {
+	br := bufio.NewReader(f)
+
+	node := newNode()
+
+	ppd := ""
+
+	for {
+		foo, err := br.Peek(4)
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
 			return err
+		}
+		switch string(foo) {
+		case "FIL,":
+			s, _ := br.ReadString('\n')
+
+			s = strings.TrimPrefix(s, "FIL,130,")
+			spl := strings.SplitN(s, ",", 2)
+
+			fullName := spl[0]
+
+			nameParts := strings.Split(fullName, ".")
+
+			node.Name = strings.ToLower(nameParts[0])
+			node.Label = nameParts[0]
+			switch strings.ToLower(nameParts[1]) {
+			case "jcl":
+				node.Type = ntMethod
+			case "imp":
+				node.Type = ntImport
+			case "exp":
+				node.Type = ntExport
+			case "frm":
+				node.Type = ntForm
+			case "qry":
+				node.Type = ntQuery
+			case "rep":
+				node.Type = ntReport
+			case "ppl":
+				node.Type = ntPpl
+			default:
+				node.Type = "UNKNOWN"
+			}
+
+		case "GRP,":
+			_, _ = br.ReadString('\n')
+		case "FLD,":
+			s, _ := br.ReadString('\n')
+
+			s = strings.TrimPrefix(s, "FLD,12,")
+			spl := strings.SplitN(s, ",", 2)
+
+			node.addFieldRef(spl[0])
+		case "IDX,":
+			s, _ := br.ReadString('\n')
+
+			s = strings.TrimPrefix(s, "IDX,04,")
+			spl := strings.SplitN(s, ",", 2)
+
+			node.addIndexRef(spl[0])
+		case "WRK,":
+			s, _ := br.ReadString('\n')
+
+			s = strings.TrimPrefix(s, "WRK,10,")
+			spl := strings.SplitN(s, ",", 2)
+
+			node.addWrkRef(spl[0])
+		case "TXT,":
+			s, _ := br.ReadString('\n')
+
+			s = strings.TrimPrefix(s, "TXT,132,")
+			spl := strings.SplitN(s, ",", 2)
+
+			c, err := strconv.Atoi(strings.TrimSpace(spl[0]))
+			if err != nil {
+				return err
+			}
+			buf := make([]byte, c)
+			_, err = io.ReadAtLeast(br, buf, c)
+			if err != nil {
+				return err
+			}
+			text := string(buf)
+			node.addText(text)
+
+			// We should have a XTX next, which we can discard
+			s, _ = br.ReadString('\n')
+			if !strings.HasPrefix(s, "XTX,") {
+				return fmt.Errorf("expected XTX prefix, but got %s in file %s", strings.TrimSpace(s), node.Name)
+			}
+
+			if node.nodeId.Type != "public_procedure_library" { // Hack. Skip ppl for now because we can't do it properly
+				// Find method calls in text
+				refs, err := findMethodRefs(node.nodeId, text)
+				if err != nil {
+					return err
+				}
+				for _, ref := range refs {
+					node.addMethodRef(ref)
+				}
+			}
+		case "SUB,":
+			s, _ := br.ReadString('\n')
+
+			s = strings.TrimPrefix(s, "SUB,27,")
+			spl := strings.SplitN(s, ",", 2)
+
+			node.addSubtableRef(spl[0])
+		case "TBL,":
+			s, _ := br.ReadString('\n')
+
+			s = strings.TrimPrefix(s, "TBL,16,")
+			spl := strings.SplitN(s, ",", 2)
+
+			node.addSubtableRef(spl[0])
+		case "PPC,":
+			s, _ := br.ReadString('\n')
+
+			s = strings.TrimPrefix(s, "PPC,18,")
+			spl := strings.SplitN(s, ",", 2)
+
+			node.addPublicProcedureRef(spl[0])
+		case "PPD,":
+			s, _ := br.ReadString('\n')
+
+			s = strings.TrimPrefix(s, "PPD,17,")
+			spl := strings.SplitN(s, ",", 2)
+			name := spl[0]
+
+			if ppd != "" {
+				cb.nodes[node.nodeId] = node
+			} else {
+				if node.Type != "public_procedure_library" {
+					log.Fatalf("found public procedure definitions outside of a public procedure library: %s, %s", name, node.Type)
+				}
+
+				if len(node.Refs) != 0 {
+					log.Fatalf("found public procedure library with references outside of the procedure definitions: %s %#v", path, node)
+				}
+			}
+
+			node = newNode()
+			node.Label = name
+			node.nodeId = newNodeId(name, ntPubProc)
+
+			ppd = name
+
+		case "BLK,", "KLB,":
+			// Ignore "blocks"
+			_, _ = br.ReadString('\n')
+		case "VAD,", "VAR,":
+			// Ignore local variables
+			_, _ = br.ReadString('\n')
+		case "LPD,", "LPC,":
+			// Ignore local procedures
+			_, _ = br.ReadString('\n')
+
+		case "AUD,", "AUT,":
+			// Ignore autovars
+			_, _ = br.ReadString('\n')
+		case "DBS,":
+			// Ignore database reference
+			_, _ = br.ReadString('\n')
+		case "OBN,", "OBP,", "EQP,":
+			// Ignore various "equinox" bits
+			_, _ = br.ReadString('\n')
+		case "DTW,", "DPW,", "DLW,", "DBP,", "DLD,", "OBD,":
+			// Ignore various definitions
+			_, _ = br.ReadString('\n')
+		case "DLC,":
+			//log.Println("implement dll calls")
+			_, _ = br.ReadString('\n')
+		case "OBC,":
+			//log.Println("implement OBC")
+			_, _ = br.ReadString('\n')
+		default:
+			fmt.Printf("foo: %s\n", foo)
 		}
 	}
 
-	if err := c.processPublicProcs(path); err != nil {
-		return err
+	if node.Type != ntPpl {
+		cb.nodes[node.nodeId] = node
 	}
 	return nil
 }
@@ -197,85 +368,6 @@ loop:
 
 }
 
-// TODO: this doesn't currently handle calls from procedures to methods.
-func (c *calls) processMethodCalls(path string) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return err
-	}
-
-	text := string(data)
-
-	name, type_ := nodeFromFullFilename(filename(path))
-	fromNodeId := newNodeId(name, type_)
-	fromNode := c.nodes[fromNodeId]
-
-	refs, err := findMethodRefs(fromNodeId, text)
-	if err != nil {
-		return err
-	}
-
-	for _, ref := range refs {
-		fromNode.addMethodRef(ref)
-	}
-
-	return nil
-}
-
-func (c *calls) processPublicProcs(path string) error {
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
-
-	stmts := make([]*statement, 0)
-
-	stmt := &statement{}
-
-loop:
-	for {
-		tok, lit, err := l.Scan()
-		if err != nil {
-			return err
-		}
-
-		switch {
-		case tok == equilex.EOF:
-			if !stmt.empty() {
-				stmts = append(stmts, stmt)
-			}
-			break loop
-		case stmt.empty() && tok == equilex.Public:
-			stmt.add(tok, lit)
-		case tok == equilex.NewLine && !stmt.empty():
-			stmts = append(stmts, stmt)
-			stmt = &statement{}
-		case !stmt.empty():
-			stmt.add(tok, lit)
-		}
-	}
-
-	for _, s := range stmts {
-		if s.tokens[0].tok == equilex.Public && s.tokens[1].tok == equilex.WS && s.tokens[2].tok == equilex.Procedure && s.tokens[3].tok == equilex.WS {
-			node := newNode(s.tokens[4].lit, ntPubProc)
-			c.nodes[node.nodeId] = &node
-		} else {
-			log.Printf("skipping procedure %v\n", s)
-		}
-	}
-
-	return nil
-}
-
 func sanitiseId(baseId string) string {
 	f := func(r rune) rune {
 		if r >= 'a' && r <= 'z' {
@@ -290,11 +382,6 @@ func sanitiseId(baseId string) string {
 		return '_'
 	}
 	return "a_" + strings.Map(f, baseId)
-}
-
-func filename(path string) string {
-	_, file := filepath.Split(path)
-	return file
 }
 
 type nodeId struct {
@@ -316,6 +403,7 @@ func (n *nodeId) id() string {
 type node struct {
 	nodeId
 	Label string
+	Txt   []string `json:"-"`
 	Refs  map[nodeId]struct{}
 }
 
@@ -327,52 +415,55 @@ func (r *node) addMethodRef(name string) {
 	r.Refs[newNodeId(name, ntMethod)] = struct{}{}
 }
 
-func newNode(name string, type_ nodeType) node {
-	return node{
-		nodeId: newNodeId(name, type_),
-		Label:  name,
-		Refs:   make(map[nodeId]struct{}),
+func newNode() *node {
+	return &node{
+		Txt:  make([]string, 0),
+		Refs: make(map[nodeId]struct{}),
 	}
+}
+
+func (r *node) addText(t string) {
+	r.Txt = append(r.Txt, t)
+}
+
+func (r *node) addFieldRef(name string) {
+	r.Refs[nodeId{Type: ntField, Name: name}] = struct{}{}
+}
+
+func (r *node) addIndexRef(name string) {
+	r.Refs[nodeId{Type: ntIndex, Name: name}] = struct{}{}
+}
+
+func (r *node) addWrkRef(name string) {
+	r.Refs[nodeId{Type: ntWorkArea, Name: name}] = struct{}{}
+}
+
+func (r *node) addSubtableRef(name string) {
+	r.Refs[nodeId{Type: ntTable, Name: name}] = struct{}{}
+}
+
+func (r *node) addPublicProcedureRef(name string) {
+	r.Refs[nodeId{Type: ntPubProc, Name: name}] = struct{}{}
 }
 
 type nodeType string
 
 const (
-	ntExport  nodeType = "export"
-	ntForm    nodeType = "form"
-	ntImport  nodeType = "import"
-	ntMethod  nodeType = "method"
-	ntProcess nodeType = "process"
-	ntPubProc nodeType = "public_procedure"
-	ntQuery   nodeType = "query"
-	ntReport  nodeType = "report"
+	ntExport   nodeType = "export"
+	ntField    nodeType = "field"
+	ntForm     nodeType = "form"
+	ntImport   nodeType = "import"
+	ntIndex    nodeType = "index"
+	ntMethod   nodeType = "method"
+	ntPpl      nodeType = "public_procedure_library"
+	ntProcess  nodeType = "process"
+	ntPubProc  nodeType = "public_procedure"
+	ntQuery    nodeType = "query"
+	ntReport   nodeType = "report"
+	ntTable    nodeType = "table"
+	ntWorkArea nodeType = "work_area"
 )
 
 func (mt nodeType) String() string {
 	return string(mt)
-}
-
-func nodeFromFullFilename(filename string) (string, nodeType) {
-	filenameLower := strings.ToLower(filename)
-	var mt nodeType
-	switch {
-	case strings.HasSuffix(filenameLower, ".ex@.txt"):
-		mt = ntExport
-	case strings.HasSuffix(filenameLower, ".fr@.txt"):
-		mt = ntForm
-	case strings.HasSuffix(filenameLower, ".im@.txt"):
-		mt = ntImport
-	case strings.HasSuffix(filenameLower, ".jc@.txt"):
-		mt = ntMethod
-	case strings.HasSuffix(filenameLower, ".pr@.txt"):
-		mt = ntProcess
-	case strings.HasSuffix(filenameLower, ".qr@.txt"):
-		mt = ntQuery
-	case strings.HasSuffix(filenameLower, ".re@.txt"):
-		mt = ntReport
-	default:
-		log.Panicf("can't create node for filename : %s\n", filenameLower)
-	}
-	name := filename[0 : len(filename)-8]
-	return name, mt
 }

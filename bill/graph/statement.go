@@ -23,16 +23,6 @@ func (stmt *statement) String() string {
 	return buf.String()
 }
 
-func (stmt *statement) empty() bool {
-	if stmt == nil {
-		return true
-	}
-	if len(stmt.tokens) == 0 {
-		return true
-	}
-	return false
-}
-
 func (stmt *statement) add(tok equilex.Token, lit string) {
 	stmt.tokens = append(stmt.tokens, token{tok, lit})
 }
