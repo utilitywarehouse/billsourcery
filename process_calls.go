@@ -95,25 +95,31 @@ func (o *NeoGraphOutput) End() error {
 }
 
 func (o *NeoGraphOutput) UpsertMethod(m *module, missing bool) error {
-	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(m), encodeIDForNeo(m), m)
+	id := encodeIDForNeo(m)
+
+	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, m)
 
 	if missing {
-		fmt.Printf("SET %s :Method \nSET %s : Missing;\n", encodeIDForNeo(m), encodeIDForNeo(m))
+		fmt.Printf("SET %s :Method \nSET %s : Missing;\n", id, id)
 	} else {
-		fmt.Printf("SET %s :Method ;\n", encodeIDForNeo(m))
+		fmt.Printf("SET %s :Method ;\n", id)
 	}
 	return nil
 }
 
 func (o *NeoGraphOutput) UpsertForm(f *module) error {
-	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(f), encodeIDForNeo(f), f)
-	fmt.Printf("SET %s :Form ;\n", encodeIDForNeo(f))
+	id := encodeIDForNeo(f)
+
+	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, f)
+	fmt.Printf("SET %s :Form ;\n", id)
 	return nil
 }
 
 func (o *NeoGraphOutput) UpsertPublicProcedure(mod *module) error {
-	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", encodeIDForNeo(mod), encodeIDForNeo(mod), mod)
-	fmt.Printf("SET %s :PublicProcedure ;\n", encodeIDForNeo(mod))
+	id := encodeIDForNeo(mod)
+
+	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, mod)
+	fmt.Printf("SET %s :PublicProcedure ;\n", id)
 	return nil
 }
 
