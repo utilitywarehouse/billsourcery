@@ -14,10 +14,8 @@ import (
 type graphOutput interface {
 	Start() error
 	End() error
-	UpsertMethod(m *module, missing bool) error
-	UpsertForm(m *module) error
-	UpsertPublicProcedure(m *module) error
-	UpsertCall(from *module, to *module) error
+	AddNode(id string, name string, tags []string) error
+	AddCall(from_id string, to_id string) error
 }
 
 func newGVCalls() *calls {
@@ -59,27 +57,28 @@ func (o *DotGraphOutput) End() error {
 	return nil
 }
 
-func (o *DotGraphOutput) UpsertMethod(m *module, missing bool) error {
-	if missing {
-		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"red\"]\n", encodeID(m), m)
-	} else {
-		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightblue\"]\n", encodeID(m), m)
+func (o *DotGraphOutput) AddNode(id string, name string, tags []string) error {
+	colour := ""
+
+	if slices.Contains(tags, "form") {
+		colour = "lightgreen"
+	} else if slices.Contains(tags, "public_procedure") {
+		colour = "yellow"
+	} else if slices.Contains(tags, "method") {
+		if slices.Contains(tags, "missing") {
+			colour = "red"
+		} else {
+			colour = "lightblue"
+		}
 	}
+
+	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"%s\"]\n", id, name, colour)
+
 	return nil
 }
 
-func (o *DotGraphOutput) UpsertForm(f *module) error {
-	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightgreen\"]\n", encodeID(f), f)
-	return nil
-}
-
-func (o *DotGraphOutput) UpsertPublicProcedure(mod *module) error {
-	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"yellow\"]\n", encodeID(mod), mod)
-	return nil
-}
-
-func (o *DotGraphOutput) UpsertCall(from *module, to *module) error {
-	fmt.Printf("\t%s -> %s\n", encodeID(from), encodeID(to))
+func (o *DotGraphOutput) AddCall(from string, to string) error {
+	fmt.Printf("\t%s -> %s\n", from, to)
 	return nil
 }
 
@@ -93,37 +92,27 @@ func (o *NeoGraphOutput) End() error {
 	return nil
 }
 
-func (o *NeoGraphOutput) UpsertMethod(m *module, missing bool) error {
-	id := encodeID(m)
+func (o NeoGraphOutput) AddNode(id string, name string, tags []string) error {
 
-	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, m)
+	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, name)
 
-	if missing {
-		fmt.Printf("SET %s :Method \nSET %s : Missing;\n", id, id)
-	} else {
-		fmt.Printf("SET %s :Method ;\n", id)
+	if slices.Contains(tags, "form") {
+		fmt.Printf("SET %s :Form ;\n", id)
+	} else if slices.Contains(tags, "public_procedure") {
+		fmt.Printf("SET %s :PublicProcedure ;\n", id)
+	} else if slices.Contains(tags, "method") {
+		if slices.Contains(tags, "missing") {
+			fmt.Printf("SET %s :Method \nSET %s : Missing;\n", id, id)
+		} else {
+			fmt.Printf("SET %s :Method ;\n", id)
+		}
 	}
+
 	return nil
 }
 
-func (o *NeoGraphOutput) UpsertForm(f *module) error {
-	id := encodeID(f)
-
-	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, f)
-	fmt.Printf("SET %s :Form ;\n", id)
-	return nil
-}
-
-func (o *NeoGraphOutput) UpsertPublicProcedure(mod *module) error {
-	id := encodeID(mod)
-
-	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, mod)
-	fmt.Printf("SET %s :PublicProcedure ;\n", id)
-	return nil
-}
-
-func (o *NeoGraphOutput) UpsertCall(from *module, to *module) error {
-	fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeID(from), encodeID(to))
+func (o *NeoGraphOutput) AddCall(from string, to string) error {
+	fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", from, to)
 	return nil
 }
 
@@ -132,12 +121,15 @@ func (c *calls) end() error {
 		return err
 	}
 	for _, m := range c.m.methods {
-		if err := c.output.UpsertMethod(&m, false); err != nil {
+		id := encodeID(&m)
+
+		if err := c.output.AddNode(id, m.moduleName, []string{"method"}); err != nil {
 			return err
 		}
 	}
 	for _, f := range c.f.forms {
-		if err := c.output.UpsertForm(&f); err != nil {
+		id := encodeID(&f)
+		if err := c.output.AddNode(id, f.moduleName, []string{"form"}); err != nil {
 			return err
 		}
 	}
@@ -150,7 +142,9 @@ func (c *calls) end() error {
 			}
 			m := value.lit
 			mod := module{m, mtProcedure}
-			if err := c.output.UpsertPublicProcedure(&mod); err != nil {
+			id := encodeID(&mod)
+
+			if err := c.output.AddNode(id, mod.moduleName, []string{"public_procedure"}); err != nil {
 				return err
 			}
 		default:
@@ -202,7 +196,7 @@ func (c *calls) end() error {
 						c.missingMethods[to_mod] = struct{}{}
 					}
 
-					if err := c.output.UpsertCall(&fromModule, &to_mod); err != nil {
+					if err := c.output.AddCall(encodeID(&fromModule), encodeID(&to_mod)); err != nil {
 						return err
 					}
 				} else {
@@ -218,7 +212,9 @@ func (c *calls) end() error {
 	}
 
 	for m := range c.missingMethods {
-		if err := c.output.UpsertMethod(&m, true); err != nil {
+		id := encodeID(&m)
+
+		if err := c.output.AddNode(id, m.moduleName, []string{"method", "missing"}); err != nil {
 			return err
 		}
 	}
