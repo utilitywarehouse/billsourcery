@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/hex"
 	"fmt"
 	"log"
 	"slices"
@@ -62,25 +61,25 @@ func (o *DotGraphOutput) End() error {
 
 func (o *DotGraphOutput) UpsertMethod(m *module, missing bool) error {
 	if missing {
-		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"red\"]\n", encodeIDForDotfile(m), m)
+		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"red\"]\n", encodeID(m), m)
 	} else {
-		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightblue\"]\n", encodeIDForDotfile(m), m)
+		fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightblue\"]\n", encodeID(m), m)
 	}
 	return nil
 }
 
 func (o *DotGraphOutput) UpsertForm(f *module) error {
-	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightgreen\"]\n", encodeIDForDotfile(f), f)
+	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"lightgreen\"]\n", encodeID(f), f)
 	return nil
 }
 
 func (o *DotGraphOutput) UpsertPublicProcedure(mod *module) error {
-	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"yellow\"]\n", encodeIDForDotfile(mod), mod)
+	fmt.Printf("\t%s [label=\"%s\" style=\"filled\" fillcolor=\"yellow\"]\n", encodeID(mod), mod)
 	return nil
 }
 
 func (o *DotGraphOutput) UpsertCall(from *module, to *module) error {
-	fmt.Printf("\t%s -> %s\n", encodeIDForDotfile(from), encodeIDForDotfile(to))
+	fmt.Printf("\t%s -> %s\n", encodeID(from), encodeID(to))
 	return nil
 }
 
@@ -95,7 +94,7 @@ func (o *NeoGraphOutput) End() error {
 }
 
 func (o *NeoGraphOutput) UpsertMethod(m *module, missing bool) error {
-	id := encodeIDForNeo(m)
+	id := encodeID(m)
 
 	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, m)
 
@@ -108,7 +107,7 @@ func (o *NeoGraphOutput) UpsertMethod(m *module, missing bool) error {
 }
 
 func (o *NeoGraphOutput) UpsertForm(f *module) error {
-	id := encodeIDForNeo(f)
+	id := encodeID(f)
 
 	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, f)
 	fmt.Printf("SET %s :Form ;\n", id)
@@ -116,7 +115,7 @@ func (o *NeoGraphOutput) UpsertForm(f *module) error {
 }
 
 func (o *NeoGraphOutput) UpsertPublicProcedure(mod *module) error {
-	id := encodeIDForNeo(mod)
+	id := encodeID(mod)
 
 	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, mod)
 	fmt.Printf("SET %s :PublicProcedure ;\n", id)
@@ -124,7 +123,7 @@ func (o *NeoGraphOutput) UpsertPublicProcedure(mod *module) error {
 }
 
 func (o *NeoGraphOutput) UpsertCall(from *module, to *module) error {
-	fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeIDForNeo(from), encodeIDForNeo(to))
+	fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", encodeID(from), encodeID(to))
 	return nil
 }
 
@@ -250,12 +249,12 @@ func (c *calls) process(path string) error {
 	return nil
 }
 
-func encodeIDForDotfile(mod *module) string {
-	// TODO: encode type in encoded name
-	return "a" + hex.EncodeToString([]byte(mod.moduleName+"_"+mod.moduleType.String()))
+func encodeID(mod *module) string {
+	baseId := mod.moduleName + "_" + mod.moduleType.String()
+	return sanitiseId(baseId)
 }
 
-func encodeIDForNeo(mod *module) string {
+func sanitiseId(baseId string) string {
 	f := func(r rune) rune {
 		if r >= 'a' && r <= 'z' {
 			return r
@@ -268,6 +267,5 @@ func encodeIDForNeo(mod *module) string {
 		}
 		return '_'
 	}
-
-	return "a_" + strings.Map(f, mod.moduleName) + "_" + strings.Map(f, mod.moduleType.String())
+	return "a_" + strings.Map(f, baseId)
 }
