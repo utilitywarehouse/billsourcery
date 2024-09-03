@@ -251,14 +251,11 @@ func (c *calls) process(path string) error {
 }
 
 func encodeIDForDotfile(mod *module) string {
-	in := mod.moduleName
 	// TODO: encode type in encoded name
-	return "a" + hex.EncodeToString([]byte(in))
+	return "a" + hex.EncodeToString([]byte(mod.moduleName+"_"+mod.moduleType.String()))
 }
 
 func encodeIDForNeo(mod *module) string {
-	in := mod.moduleName
-	// TODO: add type into encoded name
 	f := func(r rune) rune {
 		if r >= 'a' && r <= 'z' {
 			return r
@@ -271,6 +268,6 @@ func encodeIDForNeo(mod *module) string {
 		}
 		return '_'
 	}
-	in = strings.Map(f, in)
-	return "a_" + in
+
+	return "a_" + strings.Map(f, mod.moduleName) + "_" + strings.Map(f, mod.moduleType.String())
 }
