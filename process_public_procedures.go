@@ -33,9 +33,7 @@ func (ex *pubProcs) process(path string) error {
 
 	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
 
-	var stmt *statement
-
-	atStart := true
+	stmt := &statement{}
 
 	for {
 		tok, lit, err := l.Scan()
@@ -43,33 +41,19 @@ func (ex *pubProcs) process(path string) error {
 			return err
 		}
 
-		switch tok {
-		case equilex.EOF:
-			if stmt != nil {
+		switch {
+		case tok == equilex.EOF:
+			if !stmt.empty() {
 				ex.stmts = append(ex.stmts, stmt)
 			}
 			return nil
-		case equilex.WS:
-			if stmt != nil {
-				stmt.add(tok, lit)
-			}
-		case equilex.Public:
-			if atStart {
-				stmt = &statement{}
-				stmt.add(tok, lit)
-				atStart = false
-			}
-		case equilex.NewLine:
-			if stmt != nil {
-				ex.stmts = append(ex.stmts, stmt)
-			}
-			stmt = nil
-			atStart = true
-		default:
-			if stmt != nil {
-				stmt.add(tok, lit)
-			}
-			atStart = false
+		case stmt.empty() && tok == equilex.Public:
+			stmt.add(tok, lit)
+		case tok == equilex.NewLine && !stmt.empty():
+			ex.stmts = append(ex.stmts, stmt)
+			stmt = &statement{}
+		case !stmt.empty():
+			stmt.add(tok, lit)
 		}
 	}
 }
