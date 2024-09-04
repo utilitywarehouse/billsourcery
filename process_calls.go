@@ -139,6 +139,8 @@ func (c *calls) writeGraph(output graphOutput) error {
 		}
 	}
 
+	sort.Strings(c.procs)
+
 	for _, s := range c.procs {
 		mod := module{s, mtProcedure}
 		id := encodeID(&mod)
