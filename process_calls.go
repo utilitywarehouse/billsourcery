@@ -33,6 +33,7 @@ func newCalls() *calls {
 type calls struct {
 	forms   []module
 	methods []module
+	reports []module
 	procs   []string
 	calls   map[module]([]*module)
 
@@ -56,6 +57,8 @@ func (o *DotGraphOutput) AddNode(id string, name string, tags []string) error {
 
 	if slices.Contains(tags, "form") {
 		colour = "lightgreen"
+	} else if slices.Contains(tags, "report") {
+		colour = "orange"
 	} else if slices.Contains(tags, "public_procedure") {
 		colour = "yellow"
 	} else if slices.Contains(tags, "method") {
@@ -92,6 +95,8 @@ func (o NeoGraphOutput) AddNode(id string, name string, tags []string) error {
 
 	if slices.Contains(tags, "form") {
 		fmt.Printf("SET %s :Form ;\n", id)
+	} else if slices.Contains(tags, "report") {
+		fmt.Printf("SET %s :Report ;\n", id)
 	} else if slices.Contains(tags, "public_procedure") {
 		fmt.Printf("SET %s :PublicProcedure ;\n", id)
 	} else if slices.Contains(tags, "method") {
@@ -127,6 +132,13 @@ func (c *calls) writeGraph(output graphOutput) error {
 			return err
 		}
 	}
+	for _, r := range c.reports {
+		id := encodeID(&r)
+		if err := output.AddNode(id, r.moduleName, []string{"report"}); err != nil {
+			return err
+		}
+	}
+
 	for _, s := range c.procs {
 		mod := module{s, mtProcedure}
 		id := encodeID(&mod)
@@ -182,6 +194,8 @@ func (c *calls) process(path string) error {
 		c.forms = append(c.forms, moduleFromFullFilename(file))
 	} else if strings.HasSuffix(dir, "/Methods/") {
 		c.methods = append(c.methods, moduleFromFullFilename(file))
+	} else if strings.HasSuffix(dir, "/Reports/") {
+		c.reports = append(c.reports, moduleFromFullFilename(file))
 	}
 
 	if err := c.processMethodCalls(path); err != nil {
