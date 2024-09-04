@@ -3,12 +3,16 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"slices"
 
 	//"net/url"
 	"strings"
 
 	"github.com/utilitywarehouse/equilex"
+	"golang.org/x/text/encoding/charmap"
+	"golang.org/x/text/transform"
 )
 
 type graphOutput interface {
@@ -20,7 +24,7 @@ type graphOutput interface {
 
 func newGVCalls() *calls {
 	return &calls{
-		e:              newExecutions(),
+		calls:          make(map[module]([]*module)),
 		output:         &DotGraphOutput{},
 		missingMethods: make(map[module]struct{}),
 	}
@@ -28,17 +32,17 @@ func newGVCalls() *calls {
 
 func newCalls() *calls {
 	return &calls{
-		e:              newExecutions(),
+		calls:          make(map[module]([]*module)),
 		output:         &NeoGraphOutput{},
 		missingMethods: make(map[module]struct{}),
 	}
 }
 
 type calls struct {
-	f forms
-	m methods
-	p pubProcs
-	e *executions
+	forms   []module
+	methods []module
+	procs   []string
+	calls   map[module]([]*module)
 
 	missingMethods map[module]struct{}
 
@@ -120,93 +124,37 @@ func (c *calls) end() error {
 	if err := c.output.Start(); err != nil {
 		return err
 	}
-	for _, m := range c.m.methods {
+	for _, m := range c.methods {
 		id := encodeID(&m)
 
 		if err := c.output.AddNode(id, m.moduleName, []string{"method"}); err != nil {
 			return err
 		}
 	}
-	for _, f := range c.f.forms {
+	for _, f := range c.forms {
 		id := encodeID(&f)
 		if err := c.output.AddNode(id, f.moduleName, []string{"form"}); err != nil {
 			return err
 		}
 	}
-	for _, s := range c.p.stmts {
-		switch {
-		case s.tokens[0].tok == equilex.Public && s.tokens[1].tok == equilex.WS && s.tokens[2].tok == equilex.Procedure && s.tokens[3].tok == equilex.WS:
-			value := s.tokens[4]
-			if value.tok != equilex.Identifier {
-				log.Panicf("bug : %v %v", value.tok, value.lit)
-			}
-			m := value.lit
-			mod := module{m, mtProcedure}
-			id := encodeID(&mod)
+	for _, s := range c.procs {
+		mod := module{s, mtProcedure}
+		id := encodeID(&mod)
 
-			if err := c.output.AddNode(id, mod.moduleName, []string{"public_procedure"}); err != nil {
-				return err
-			}
-		default:
-			log.Printf("skipping procedure %v\n", s)
+		if err := c.output.AddNode(id, mod.moduleName, []string{"public_procedure"}); err != nil {
+			return err
 		}
 	}
-	for from, e := range c.e.stmts {
-		fromModule := moduleFromFullFilename(from)
-		for _, stmt := range e {
-			toks := stmt.tokens
-			for toks[0].tok != equilex.Execute {
-				toks = toks[1:]
+
+	for fromModule, toModules := range c.calls {
+
+		for _, toModule := range toModules {
+			if !slices.Contains(c.methods, *toModule) {
+				c.missingMethods[*toModule] = struct{}{}
 			}
-			switch toks[2].tok {
-			case equilex.Export:
-			case equilex.Task:
-			case equilex.Form:
-			case equilex.FormSwap:
-			case equilex.Query:
-			case equilex.Process:
-			case equilex.System:
-			case equilex.Report:
-			case equilex.ReportPreview:
-			case equilex.Shell:
-			case equilex.Command:
-			case equilex.Import:
-			case equilex.EmptyDatabase:
-			case equilex.MethodSwap:
-			case equilex.MethodSetup:
-			case equilex.OptimiseDatabase:
-			case equilex.OptimiseTable:
-			case equilex.OptimiseTableIndexes:
-			case equilex.OptimiseDatabaseIndexes:
-			case equilex.OptimiseAllDatabases:
-			case equilex.OptimiseAllDatabasesIndexes:
-			case equilex.OptimiseDatabaseHelper:
-			case equilex.ConvertAllDatabases:
-			case equilex.Method:
-				to := toks[4].lit
 
-				if to[0] == '"' && to[len(to)-1] == '"' {
-					to = strings.ToLower(to)
-					to = to[1 : len(to)-1]
-					to = strings.TrimSuffix(to, ".jcl")
-
-					to_mod := module{to, mtMethod}
-
-					if !slices.Contains(c.m.methods, to_mod) {
-						c.missingMethods[to_mod] = struct{}{}
-					}
-
-					if err := c.output.AddCall(encodeID(&fromModule), encodeID(&to_mod)); err != nil {
-						return err
-					}
-				} else {
-					log.Printf("call from %s to variable method '%s' - skipping", fromModule, to)
-				}
-			default:
-				for i, t := range toks {
-					log.Printf("tok %d is %v\n", i, t.lit)
-				}
-				return fmt.Errorf("unhandled type : '%#v' for statement %v", (toks[2].lit), stmt)
+			if err := c.output.AddCall(encodeID(&fromModule), encodeID(toModule)); err != nil {
+				return err
 			}
 		}
 	}
@@ -230,18 +178,164 @@ func (c *calls) processAll(sourceRoot string) error {
 }
 
 func (c *calls) process(path string) error {
-	if err := c.f.process(path); err != nil {
+	dir, file := filepath.Split(path)
+	if strings.HasSuffix(dir, "/Forms/") {
+		c.forms = append(c.forms, moduleFromFullFilename(file))
+	} else if strings.HasSuffix(dir, "/Methods/") {
+		c.methods = append(c.methods, moduleFromFullFilename(file))
+	}
+
+	if err := c.processMethodCalls(path); err != nil {
 		return err
 	}
-	if err := c.m.process(path); err != nil {
+
+	if err := c.processPublicProcs(path); err != nil {
 		return err
 	}
-	if err := c.e.process(path); err != nil {
+	return nil
+}
+
+func (c *calls) processMethodCalls(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
 		return err
 	}
-	if err := c.p.process(path); err != nil {
+	defer f.Close()
+
+	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
+
+	stmts := make([]*statement, 0)
+
+	var stmt *statement
+
+loop:
+	for {
+		tok, lit, err := l.Scan()
+		if err != nil {
+			return err
+		}
+
+		switch tok {
+		case equilex.EOF:
+			if stmt != nil {
+				stmts = append(stmts, stmt)
+			}
+			break loop
+		case equilex.Execute:
+			stmt = &statement{}
+			stmt.add(tok, lit)
+		case equilex.NewLine:
+			if stmt != nil {
+				stmts = append(stmts, stmt)
+			}
+			stmt = nil
+		default:
+			if stmt != nil {
+				stmt.add(tok, lit)
+			}
+		}
+	}
+
+	fromModule := moduleFromFullFilename(filename(path))
+	for _, stmt := range stmts {
+		toks := stmt.tokens
+		for toks[0].tok != equilex.Execute {
+			toks = toks[1:]
+		}
+		switch toks[2].tok {
+		case equilex.Export:
+		case equilex.Task:
+		case equilex.Form:
+		case equilex.FormSwap:
+		case equilex.Query:
+		case equilex.Process:
+		case equilex.System:
+		case equilex.Report:
+		case equilex.ReportPreview:
+		case equilex.Shell:
+		case equilex.Command:
+		case equilex.Import:
+		case equilex.EmptyDatabase:
+		case equilex.MethodSwap:
+		case equilex.MethodSetup:
+		case equilex.OptimiseDatabase:
+		case equilex.OptimiseTable:
+		case equilex.OptimiseTableIndexes:
+		case equilex.OptimiseDatabaseIndexes:
+		case equilex.OptimiseAllDatabases:
+		case equilex.OptimiseAllDatabasesIndexes:
+		case equilex.OptimiseDatabaseHelper:
+		case equilex.ConvertAllDatabases:
+		case equilex.Method:
+			to := toks[4].lit
+
+			if to[0] == '"' && to[len(to)-1] == '"' {
+				to = strings.ToLower(to)
+				to = to[1 : len(to)-1]
+				to = strings.TrimSuffix(to, ".jcl")
+
+				to_mod := module{to, mtMethod}
+
+				c.calls[fromModule] = append(c.calls[fromModule], &to_mod)
+
+			} else {
+				log.Printf("call from %s to variable method '%s' - skipping", fromModule, to)
+			}
+		default:
+			for i, t := range toks {
+				log.Printf("tok %d is %v\n", i, t.lit)
+			}
+			return fmt.Errorf("unhandled type : '%#v' for statement %v", (toks[2].lit), stmt)
+		}
+	}
+
+	return nil
+}
+
+func (c *calls) processPublicProcs(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
 		return err
 	}
+	defer f.Close()
+
+	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
+
+	stmts := make([]*statement, 0)
+
+	stmt := &statement{}
+
+loop:
+	for {
+		tok, lit, err := l.Scan()
+		if err != nil {
+			return err
+		}
+
+		switch {
+		case tok == equilex.EOF:
+			if !stmt.empty() {
+				stmts = append(stmts, stmt)
+			}
+			break loop
+		case stmt.empty() && tok == equilex.Public:
+			stmt.add(tok, lit)
+		case tok == equilex.NewLine && !stmt.empty():
+			stmts = append(stmts, stmt)
+			stmt = &statement{}
+		case !stmt.empty():
+			stmt.add(tok, lit)
+		}
+	}
+
+	for _, s := range stmts {
+		if s.tokens[0].tok == equilex.Public && s.tokens[1].tok == equilex.WS && s.tokens[2].tok == equilex.Procedure && s.tokens[3].tok == equilex.WS {
+			c.procs = append(c.procs, s.tokens[4].lit)
+		} else {
+			log.Printf("skipping procedure %v\n", s)
+		}
+	}
+
 	return nil
 }
 
