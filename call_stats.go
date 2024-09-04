@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"log"
 	"os"
 	"sort"
 	"strconv"
@@ -12,10 +11,10 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-func callStatsTable(sourceRoot string, dsn string) {
+func callStatsTable(sourceRoot string, dsn string) error {
 	all := &allModules{}
 	if err := all.processAll(sourceRoot); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	// map of module name to call count
@@ -23,7 +22,7 @@ func callStatsTable(sourceRoot string, dsn string) {
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	q := `select
@@ -37,7 +36,7 @@ func callStatsTable(sourceRoot string, dsn string) {
 
 	rows, err := db.Query(q)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	defer rows.Close()
@@ -46,14 +45,14 @@ func callStatsTable(sourceRoot string, dsn string) {
 		var callto string
 		var count int
 		if err := rows.Scan(&caller, &callto, &count); err != nil {
-			log.Fatal(err)
+			return err
 		}
 		spl := strings.Split(strings.ToLower(callto), ".")
 		mod := module{moduleName: spl[0], moduleType: mapModExt(spl[1])}
 		counts[mod] = counts[mod] + count
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	type tableEntry struct {
@@ -77,4 +76,6 @@ func callStatsTable(sourceRoot string, dsn string) {
 		tw.Append([]string{res.ModuleName, res.ModuleType.String(), strconv.Itoa(res.CallCount)})
 	}
 	tw.Render()
+
+	return nil
 }

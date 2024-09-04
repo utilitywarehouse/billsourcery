@@ -52,8 +52,7 @@ func main() {
 				Name:  "stats",
 				Usage: "Provide basic stats about the source code",
 				Action: func(cCtx *cli.Context) error {
-					doProcessAll(cCtx.String("source-root"), &statsProcessor{})
-					return nil
+					return doProcessAll(cCtx.String("source-root"), &statsProcessor{})
 				},
 			},
 			{
@@ -87,8 +86,7 @@ func main() {
 						cCtx.String("earliest"),
 						cCtx.StringSlice("branches"),
 						cCtx.String("output"))
-					doProcessAll(cCtx.String("source-root"), processor)
-					return nil
+					return doProcessAll(cCtx.String("source-root"), processor)
 				},
 			},
 			{
@@ -117,120 +115,106 @@ func main() {
 						ctx.String("earliest"),
 						ctx.StringSlice("branches"),
 					)
-					doProcessAll(ctx.String("source-root"), processor)
-					return nil
+					return doProcessAll(ctx.String("source-root"), processor)
 				},
 			},
 			{
 				Name:  "strip-comments",
 				Usage: "Remove comments from the source files",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), &commentStripper{})
-					return nil
+					return doProcessAll(ctx.String("source-root"), &commentStripper{})
 				},
 			},
 			{
 				Name:  "string-constants",
 				Usage: "Dump all \" delimited string constants found in the source, one per line, to stdout (multi-line strings not included)",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), &stringConsts{})
-					return nil
+					return doProcessAll(ctx.String("source-root"), &stringConsts{})
+
 				},
 			},
 			{
 				Name:  "executes",
 				Usage: "List execute statements. Incomplete",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), newExecutions())
-					return nil
+					return doProcessAll(ctx.String("source-root"), newExecutions())
 				},
 			},
 			{
 				Name:  "public-procs",
 				Usage: "List public procedures and public externals",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), &pubProcs{})
-					return nil
+					return doProcessAll(ctx.String("source-root"), &pubProcs{})
 				},
 			},
 			{
 				Name:  "methods",
 				Usage: "List method names",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), &methods{})
-					return nil
+					return doProcessAll(ctx.String("source-root"), &methods{})
 				},
 			},
 			{
 				Name:  "forms",
 				Usage: "List form names",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), &forms{})
-					return nil
+					return doProcessAll(ctx.String("source-root"), &forms{})
 				},
 			},
 			{
 				Name:  "processes",
 				Usage: "List process names",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), &processes{})
-					return nil
+					return doProcessAll(ctx.String("source-root"), &processes{})
 				},
 			},
 			{
 				Name:  "reports",
 				Usage: "List report names",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), &reports{})
-					return nil
+					return doProcessAll(ctx.String("source-root"), &reports{})
 				},
 			},
 			{
 				Name:  "all-modules",
 				Usage: "List all modules (not procedures)",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), &allModules{})
-					return nil
+					return doProcessAll(ctx.String("source-root"), &allModules{})
 				},
 			},
 			{
 				Name:  "calls-neo",
 				Usage: "Produce neo4j cypher statements to create bill call graph. (Procedures not supported properly yet)",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), newCalls())
-					return nil
+					return doProcessAll(ctx.String("source-root"), newCalls())
 				},
 			},
 			{
 				Name:  "calls-dot",
 				Usage: "Produce a .dot file of calls",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), newGVCalls())
-					return nil
+					return doProcessAll(ctx.String("source-root"), newGVCalls())
 				},
 			},
 			{
 				Name:  "called-missing-methods",
 				Usage: "List any methods that are called but do not exist",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), newCalledMissingMethods())
-					return nil
+					return doProcessAll(ctx.String("source-root"), newCalledMissingMethods())
 				},
 			},
 			{
 				Name:  "lexer-check",
 				Usage: "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), &lexCheck{})
-					return nil
+					return doProcessAll(ctx.String("source-root"), &lexCheck{})
 				},
 			},
 			{
 				Name:  "identifiers",
 				Usage: "List identifier tokens, one per line.  This is mostly for debugging the lexer",
 				Action: func(ctx *cli.Context) error {
-					doProcessAll(ctx.String("source-root"), &identifiers{})
-					return nil
+					return doProcessAll(ctx.String("source-root"), &identifiers{})
 				},
 			},
 			{
@@ -245,8 +229,7 @@ func main() {
 				},
 
 				Action: func(ctx *cli.Context) error {
-					callStatsTable(ctx.String("source-root"), ctx.String("dsn"))
-					return nil
+					return callStatsTable(ctx.String("source-root"), ctx.String("dsn"))
 				},
 			},
 		},
@@ -257,16 +240,16 @@ func main() {
 	}
 }
 
-func doProcessAll(sourceRoot string, proc processor) {
+func doProcessAll(sourceRoot string, proc processor) error {
 	err := proc.processAll(sourceRoot)
-
-	if err == nil {
-		err = proc.end()
-	}
-
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
+	if err := proc.end(); err != nil {
+		return err
+	}
+	return nil
 }
 
 func walkSource(sourceRoot string, proc fileProcessor) error {
