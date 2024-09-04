@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sort"
 
 	//"net/url"
 	"strings"
@@ -135,7 +136,14 @@ func (c *calls) writeGraph(output graphOutput) error {
 		}
 	}
 
-	for fromModule, toModules := range c.calls {
+	fromModuleSorted := make([]module, 0, len(c.calls))
+	for k := range c.calls {
+		fromModuleSorted = append(fromModuleSorted, k)
+	}
+	sort.Slice(fromModuleSorted, func(i int, j int) bool { return fromModuleSorted[i].moduleName < fromModuleSorted[j].moduleName })
+
+	for _, fromModule := range fromModuleSorted {
+		toModules := c.calls[fromModule]
 
 		for _, toModule := range toModules {
 			if !slices.Contains(c.methods, *toModule) {
@@ -148,7 +156,13 @@ func (c *calls) writeGraph(output graphOutput) error {
 		}
 	}
 
-	for m := range c.missingMethods {
+	missingSorted := make([]module, 0, len(c.missingMethods))
+	for missing := range c.missingMethods {
+		missingSorted = append(missingSorted, missing)
+	}
+	sort.Slice(missingSorted, func(i int, j int) bool { return missingSorted[i].moduleName < missingSorted[j].moduleName })
+
+	for _, m := range missingSorted {
 		id := encodeID(&m)
 
 		if err := output.AddNode(id, m.moduleName, []string{"method", "missing"}); err != nil {
