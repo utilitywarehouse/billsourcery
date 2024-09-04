@@ -153,14 +153,28 @@ func main() {
 				Name:  "methods",
 				Usage: "List method names",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), &methods{})
+					calls := newCalls()
+					if err := walkSource(ctx.String("source-root"), calls); err != nil {
+						return err
+					}
+					for _, method := range calls.methods {
+						fmt.Println(method)
+					}
+					return nil
 				},
 			},
 			{
 				Name:  "forms",
 				Usage: "List form names",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), &forms{})
+					calls := newCalls()
+					if err := walkSource(ctx.String("source-root"), calls); err != nil {
+						return err
+					}
+					for _, form := range calls.forms {
+						fmt.Println(form)
+					}
+					return nil
 				},
 			},
 			{
