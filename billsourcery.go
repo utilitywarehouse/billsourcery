@@ -1,11 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -208,7 +210,20 @@ func main() {
 				Name:  "called-missing-methods",
 				Usage: "List any methods that are called but do not exist",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), newCalledMissingMethods())
+					calls := newCalls()
+					if err := walkSource(ctx.String("source-root"), calls); err != nil {
+						return err
+					}
+
+					for fromModule, toModules := range calls.calls {
+						for _, toModule := range toModules {
+							if !slices.Contains(calls.methods, *toModule) {
+								fmt.Printf("%s calls missing method %s\n", fromModule, toModule)
+							}
+						}
+					}
+
+					return nil
 				},
 			},
 			{
