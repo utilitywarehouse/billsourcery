@@ -18,8 +18,7 @@ import (
 
 func newCalls() *calls {
 	return &calls{
-		calls:          make(map[module]([]*module)),
-		missingMethods: make(map[module]struct{}),
+		calls: make(map[module]([]*module)),
 	}
 }
 
@@ -29,8 +28,6 @@ type calls struct {
 	reports []module
 	procs   []string
 	calls   map[module]([]*module)
-
-	missingMethods map[module]struct{}
 }
 
 func (c *calls) writeGraph(output graphOutput) error {
@@ -74,12 +71,14 @@ func (c *calls) writeGraph(output graphOutput) error {
 	}
 	sort.Slice(fromModuleSorted, func(i int, j int) bool { return fromModuleSorted[i].moduleName < fromModuleSorted[j].moduleName })
 
+	missingMethods := make(map[module]struct{})
+
 	for _, fromModule := range fromModuleSorted {
 		toModules := c.calls[fromModule]
 
 		for _, toModule := range toModules {
 			if !slices.Contains(c.methods, *toModule) {
-				c.missingMethods[*toModule] = struct{}{}
+				missingMethods[*toModule] = struct{}{}
 			}
 
 			if err := output.AddCall(encodeID(&fromModule), encodeID(toModule)); err != nil {
@@ -88,8 +87,8 @@ func (c *calls) writeGraph(output graphOutput) error {
 		}
 	}
 
-	missingSorted := make([]module, 0, len(c.missingMethods))
-	for missing := range c.missingMethods {
+	missingSorted := make([]module, 0, len(missingMethods))
+	for missing := range missingMethods {
 		missingSorted = append(missingSorted, missing)
 	}
 	sort.Slice(missingSorted, func(i int, j int) bool { return missingSorted[i].moduleName < missingSorted[j].moduleName })
