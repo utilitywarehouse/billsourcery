@@ -50,11 +50,7 @@ func main() {
 				Name:  "stats",
 				Usage: "Provide basic stats about the source code",
 				Action: func(ctx *cli.Context) error {
-					stats := &statsProcessor{}
-					if err := walkSource(ctx.String("source-root"), stats); err != nil {
-						return err
-					}
-					return stats.print()
+					return Stats(ctx.String("source-root"))
 				},
 			},
 			{
@@ -83,19 +79,12 @@ func main() {
 					},
 				},
 				Action: func(cCtx *cli.Context) error {
-					processor := newTimeStatsImageProcessor(
+					return TimestatsImage(
+						cCtx.String("source-root"),
 						cCtx.String("cache-db"),
 						cCtx.String("earliest"),
 						cCtx.StringSlice("branches"),
 						cCtx.String("output"))
-
-					if err := processor.scanRepository(cCtx.String("source-root")); err != nil {
-						return err
-					}
-					if err := processor.outputGraph(); err != nil {
-						return err
-					}
-					return nil
 				},
 			},
 			{
@@ -119,162 +108,96 @@ func main() {
 					},
 				},
 				Action: func(ctx *cli.Context) error {
-					processor := newTimeStatsUnaggBQProcessor(
+					return TimestatsBqRaw(
+						ctx.String("source-root"),
 						ctx.String("cache-db"),
 						ctx.String("earliest"),
 						ctx.StringSlice("branches"),
 					)
-					err := processor.processRepository(ctx.String("source-root"))
-					if err != nil {
-						return err
-					}
-
-					if err := processor.end(); err != nil {
-						return err
-					}
-					return nil
 				},
 			},
 			{
 				Name:  "strip-comments",
 				Usage: "Remove comments from the source files",
 				Action: func(ctx *cli.Context) error {
-					return walkSource(ctx.String("source-root"), &commentStripper{})
+					return StripComments(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "string-constants",
 				Usage: "Dump all \" delimited string constants found in the source, one per line, to stdout (multi-line strings not included)",
 				Action: func(ctx *cli.Context) error {
-					return walkSource(ctx.String("source-root"), &stringConsts{})
+					return StringConstants(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "public-procs",
 				Usage: "List public procedures",
 				Action: func(ctx *cli.Context) error {
-					calls := newCalls()
-					if err := walkSource(ctx.String("source-root"), calls); err != nil {
-						return err
-					}
-					sort.Strings(calls.procs)
-					for _, procedure := range calls.procs {
-						fmt.Println(procedure)
-					}
-					return nil
+					return PublicProcs(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "methods",
 				Usage: "List method names",
 				Action: func(ctx *cli.Context) error {
-					calls := newCalls()
-					if err := walkSource(ctx.String("source-root"), calls); err != nil {
-						return err
-					}
-					for _, method := range calls.methods {
-						fmt.Println(method)
-					}
-					return nil
+					return Methods(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "forms",
 				Usage: "List form names",
 				Action: func(ctx *cli.Context) error {
-					calls := newCalls()
-					if err := walkSource(ctx.String("source-root"), calls); err != nil {
-						return err
-					}
-					for _, form := range calls.forms {
-						fmt.Println(form)
-					}
-					return nil
+					return Forms(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "reports",
 				Usage: "List report names",
 				Action: func(ctx *cli.Context) error {
-					calls := newCalls()
-					if err := walkSource(ctx.String("source-root"), calls); err != nil {
-						return err
-					}
-					for _, report := range calls.reports {
-						fmt.Println(report)
-					}
-					return nil
+					return Reports(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "all-modules",
 				Usage: "List all modules (not procedures)",
 				Action: func(ctx *cli.Context) error {
-					processor := &allModules{}
-					if err := walkSource(ctx.String("source-root"), processor); err != nil {
-						return err
-					}
-
-					if err := processor.print(); err != nil {
-						return err
-					}
-					return nil
+					return AllModules(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "calls-neo",
 				Usage: "Produce neo4j cypher statements to create bill call graph. (Procedures not supported properly yet)",
 				Action: func(ctx *cli.Context) error {
-					calls := newCalls()
-					if err := walkSource(ctx.String("source-root"), calls); err != nil {
-						return err
-					}
-					return calls.writeGraph(&NeoGraphOutput{})
+					return CallsNeo(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "calls-dot",
 				Usage: "Produce a .dot file of calls",
 				Action: func(ctx *cli.Context) error {
-					calls := newCalls()
-					if err := walkSource(ctx.String("source-root"), calls); err != nil {
-						return err
-					}
-					return calls.writeGraph(&DotGraphOutput{})
+					return CallsDot(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "called-missing-methods",
 				Usage: "List any methods that are called but do not exist",
 				Action: func(ctx *cli.Context) error {
-					calls := newCalls()
-					if err := walkSource(ctx.String("source-root"), calls); err != nil {
-						return err
-					}
-
-					for fromModule, toModules := range calls.calls {
-						for _, toModule := range toModules {
-							if !slices.Contains(calls.methods, *toModule) {
-								fmt.Printf("%s calls missing method %s\n", fromModule, toModule)
-							}
-						}
-					}
-
-					return nil
+					return CalledMissingMethods(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "lexer-check",
 				Usage: "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer",
 				Action: func(ctx *cli.Context) error {
-					return walkSource(ctx.String("source-root"), &lexCheck{})
+					return LexerCheck(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "identifiers",
 				Usage: "List identifier tokens, one per line.  This is mostly for debugging the lexer",
 				Action: func(ctx *cli.Context) error {
-					return walkSource(ctx.String("source-root"), &identifiers{})
+					return Identifiers(ctx.String("source-root"))
 				},
 			},
 			{
@@ -289,7 +212,7 @@ func main() {
 				},
 
 				Action: func(ctx *cli.Context) error {
-					return callStatsTable(ctx.String("source-root"), ctx.String("dsn"))
+					return CallStatsTable(ctx.String("source-root"), ctx.String("dsn"))
 				},
 			},
 		},
@@ -298,6 +221,153 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func Stats(sourceRoot string) error {
+	stats := &statsProcessor{}
+	if err := walkSource(sourceRoot, stats); err != nil {
+		return err
+	}
+	return stats.print()
+}
+
+func TimestatsImage(sourceRoot string, cacheDb string, earliest string, branches []string, output string) error {
+	processor := newTimeStatsImageProcessor(cacheDb, earliest, branches, output)
+	if err := processor.scanRepository(sourceRoot); err != nil {
+		return err
+	}
+	if err := processor.outputGraph(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func TimestatsBqRaw(sourceRoot string, cacheDb string, earliest string,
+	branches []string) error {
+	processor := newTimeStatsUnaggBQProcessor(
+		cacheDb,
+		earliest,
+		branches,
+	)
+	err := processor.processRepository(sourceRoot)
+	if err != nil {
+		return err
+	}
+
+	if err := processor.end(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func StripComments(sourceRoot string) error {
+	return walkSource(sourceRoot, &commentStripper{})
+}
+
+func StringConstants(sourceRoot string) error {
+	return walkSource(sourceRoot, &stringConsts{})
+}
+
+func PublicProcs(sourceRoot string) error {
+	calls := newCalls()
+	if err := walkSource(sourceRoot, calls); err != nil {
+		return err
+	}
+	sort.Strings(calls.procs)
+	for _, procedure := range calls.procs {
+		fmt.Println(procedure)
+	}
+	return nil
+}
+
+func Methods(sourceRoot string) error {
+	calls := newCalls()
+	if err := walkSource(sourceRoot, calls); err != nil {
+		return err
+	}
+	for _, method := range calls.methods {
+		fmt.Println(method)
+	}
+	return nil
+}
+
+func Forms(sourceRoot string) error {
+	calls := newCalls()
+	if err := walkSource(sourceRoot, calls); err != nil {
+		return err
+	}
+	for _, form := range calls.forms {
+		fmt.Println(form)
+	}
+	return nil
+}
+
+func Reports(sourceRoot string) error {
+	calls := newCalls()
+	if err := walkSource(sourceRoot, calls); err != nil {
+		return err
+	}
+	for _, report := range calls.reports {
+		fmt.Println(report)
+	}
+	return nil
+}
+
+func AllModules(sourceRoot string) error {
+	processor := &allModules{}
+	if err := walkSource(sourceRoot, processor); err != nil {
+		return err
+	}
+
+	if err := processor.print(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func CallsNeo(sourceRoot string) error {
+	calls := newCalls()
+	if err := walkSource(sourceRoot, calls); err != nil {
+		return err
+	}
+	return calls.writeGraph(&NeoGraphOutput{})
+}
+
+func CallsDot(sourceRoot string) error {
+	calls := newCalls()
+	if err := walkSource(sourceRoot, calls); err != nil {
+		return err
+	}
+	return calls.writeGraph(&DotGraphOutput{})
+}
+
+func CalledMissingMethods(sourceRoot string) error {
+	calls := newCalls()
+	if err := walkSource(sourceRoot, calls); err != nil {
+		return err
+	}
+
+	for fromModule, toModules := range calls.calls {
+		for _, toModule := range toModules {
+			if !slices.Contains(calls.methods, *toModule) {
+				fmt.Printf("%s calls missing method %s\n", fromModule, toModule)
+			}
+		}
+	}
+
+	return nil
+}
+
+func LexerCheck(sourceRoot string) error {
+	return walkSource(sourceRoot, &lexCheck{})
+}
+
+func Identifiers(sourceRoot string) error {
+	return walkSource(sourceRoot, &identifiers{})
+}
+
+func CallStatsTable(sourceRoot string, dsn string) error {
+	return callStatsTable(sourceRoot, dsn)
 }
 
 func walkSource(sourceRoot string, proc fileProcessor) error {
