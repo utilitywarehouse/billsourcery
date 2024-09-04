@@ -42,7 +42,7 @@ type rawTimeStatsProcessor struct {
 	branches         []string
 }
 
-func (lp *rawTimeStatsProcessor) processAll(sourceRoot string) error {
+func (lp *rawTimeStatsProcessor) processRepository(sourceRoot string) error {
 	for _, b := range lp.branches {
 		if err := lp.processBranch(b, sourceRoot); err != nil {
 			return err
@@ -101,7 +101,7 @@ func (lp *rawTimeStatsProcessor) processBranch(branch string, sourceRoot string)
 			}
 
 			blp := &rawTimeStatsBranchProcessor{branch: branch}
-			err = blp.processAll(sourceRoot)
+			err = walkSource(sourceRoot, blp)
 			var tse *rawTimeStatsSummary
 			if err != nil {
 				log.Printf("revision %s was in error (will still cache): %s\n", revision, err.Error())
@@ -138,10 +138,6 @@ func (lp *rawTimeStatsProcessor) processBranch(branch string, sourceRoot string)
 type rawTimeStatsBranchProcessor struct {
 	branch string
 	stats  []*rawTimeStatsEntry
-}
-
-func (m *rawTimeStatsBranchProcessor) processAll(sourceRoot string) error {
-	return walkSource(sourceRoot, m)
 }
 
 func (lp *rawTimeStatsBranchProcessor) process(path string) error {

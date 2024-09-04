@@ -22,11 +22,6 @@ func init() {
 	}()
 }
 
-type processor interface {
-	end() error
-	processAll(sourceRoot string) error
-}
-
 type fileProcessor interface {
 	process(path string) error
 }
@@ -54,8 +49,12 @@ func main() {
 			{
 				Name:  "stats",
 				Usage: "Provide basic stats about the source code",
-				Action: func(cCtx *cli.Context) error {
-					return doProcessAll(cCtx.String("source-root"), &statsProcessor{})
+				Action: func(ctx *cli.Context) error {
+					stats := &statsProcessor{}
+					if err := walkSource(ctx.String("source-root"), stats); err != nil {
+						return err
+					}
+					return stats.print()
 				},
 			},
 			{
@@ -89,7 +88,14 @@ func main() {
 						cCtx.String("earliest"),
 						cCtx.StringSlice("branches"),
 						cCtx.String("output"))
-					return doProcessAll(cCtx.String("source-root"), processor)
+
+					if err := processor.scanRepository(cCtx.String("source-root")); err != nil {
+						return err
+					}
+					if err := processor.outputGraph(); err != nil {
+						return err
+					}
+					return nil
 				},
 			},
 			{
@@ -118,22 +124,29 @@ func main() {
 						ctx.String("earliest"),
 						ctx.StringSlice("branches"),
 					)
-					return doProcessAll(ctx.String("source-root"), processor)
+					err := processor.processRepository(ctx.String("source-root"))
+					if err != nil {
+						return err
+					}
+
+					if err := processor.end(); err != nil {
+						return err
+					}
+					return nil
 				},
 			},
 			{
 				Name:  "strip-comments",
 				Usage: "Remove comments from the source files",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), &commentStripper{})
+					return walkSource(ctx.String("source-root"), &commentStripper{})
 				},
 			},
 			{
 				Name:  "string-constants",
 				Usage: "Dump all \" delimited string constants found in the source, one per line, to stdout (multi-line strings not included)",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), &stringConsts{})
-
+					return walkSource(ctx.String("source-root"), &stringConsts{})
 				},
 			},
 			{
@@ -183,14 +196,29 @@ func main() {
 				Name:  "reports",
 				Usage: "List report names",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), &reports{})
+					processor := &reports{}
+					if err := walkSource(ctx.String("source-root"), processor); err != nil {
+						return err
+					}
+					if err := processor.end(); err != nil {
+						return err
+					}
+					return nil
 				},
 			},
 			{
 				Name:  "all-modules",
 				Usage: "List all modules (not procedures)",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), &allModules{})
+					processor := &allModules{}
+					if err := walkSource(ctx.String("source-root"), processor); err != nil {
+						return err
+					}
+
+					if err := processor.print(); err != nil {
+						return err
+					}
+					return nil
 				},
 			},
 			{
@@ -239,14 +267,14 @@ func main() {
 				Name:  "lexer-check",
 				Usage: "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), &lexCheck{})
+					return walkSource(ctx.String("source-root"), &lexCheck{})
 				},
 			},
 			{
 				Name:  "identifiers",
 				Usage: "List identifier tokens, one per line.  This is mostly for debugging the lexer",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), &identifiers{})
+					return walkSource(ctx.String("source-root"), &identifiers{})
 				},
 			},
 			{
@@ -270,18 +298,6 @@ func main() {
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func doProcessAll(sourceRoot string, proc processor) error {
-	err := proc.processAll(sourceRoot)
-	if err != nil {
-		return err
-	}
-
-	if err := proc.end(); err != nil {
-		return err
-	}
-	return nil
 }
 
 func walkSource(sourceRoot string, proc fileProcessor) error {

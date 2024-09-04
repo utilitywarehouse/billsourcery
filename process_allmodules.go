@@ -64,15 +64,11 @@ type allModules struct {
 	modules []module
 }
 
-func (m *allModules) end() error {
+func (m *allModules) print() error {
 	for _, method := range m.modules {
 		fmt.Println(method)
 	}
 	return nil
-}
-
-func (m *allModules) processAll(sourceRoot string) error {
-	return walkSource(sourceRoot, m)
 }
 
 func (m *allModules) process(path string) error {

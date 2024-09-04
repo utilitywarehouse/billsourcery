@@ -11,12 +11,6 @@ import (
 
 type commentStripper struct{}
 
-func (lp *commentStripper) end() error { return nil }
-
-func (m *commentStripper) processAll(sourceRoot string) error {
-	return walkSource(sourceRoot, m)
-}
-
 func (lp *commentStripper) process(path string) error {
 	f, err := os.Open(path)
 	if err != nil {

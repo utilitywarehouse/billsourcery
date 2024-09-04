@@ -11,12 +11,6 @@ import (
 
 type identifiers struct{}
 
-func (ifr *identifiers) end() error { return nil }
-
-func (m *identifiers) processAll(sourceRoot string) error {
-	return walkSource(sourceRoot, m)
-}
-
 func (ifr *identifiers) process(path string) error {
 	f, err := os.Open(path)
 	if err != nil {

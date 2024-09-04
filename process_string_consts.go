@@ -11,12 +11,6 @@ import (
 
 type stringConsts struct{}
 
-func (lp *stringConsts) end() error { return nil }
-
-func (m *stringConsts) processAll(sourceRoot string) error {
-	return walkSource(sourceRoot, m)
-}
-
 func (lp *stringConsts) process(path string) error {
 	f, err := os.Open(path)
 	if err != nil {

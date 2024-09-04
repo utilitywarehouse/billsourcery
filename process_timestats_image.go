@@ -32,7 +32,7 @@ func (it *IntTicker) Ticks(min float64, max float64) []plot.Tick {
 	return ticks
 }
 
-func (lp *timeStatsImageProcessor) end() error {
+func (lp *timeStatsImageProcessor) outputGraph() error {
 	// set up graph
 
 	plotter.DefaultLineStyle.Width = vg.Points(1)

@@ -15,16 +15,12 @@ type statsProcessor struct {
 	OtherCount   int `json:"other-chars"`
 }
 
-func (lp *statsProcessor) end() error {
+func (lp *statsProcessor) print() error {
 	fmt.Printf("files : %d\n", lp.FileCount)
 	fmt.Printf("code bytes  (non-comments) : %d\n", lp.OtherCount)
 	fmt.Printf("comment bytes : %d\n", lp.CommentCount)
 	fmt.Printf("total bytes : %d\n", lp.CommentCount+lp.OtherCount)
 	return nil
-}
-
-func (lp *statsProcessor) processAll(sourceRoot string) error {
-	return walkSource(sourceRoot, lp)
 }
 
 func (lp *statsProcessor) process(path string) error {

@@ -30,7 +30,7 @@ type timeStatsProcessor struct {
 	branches         []string
 }
 
-func (lp *timeStatsProcessor) processAll(sourceRoot string) error {
+func (lp *timeStatsProcessor) scanRepository(sourceRoot string) error {
 	for _, b := range lp.branches {
 		if err := lp.processBranch(b, sourceRoot); err != nil {
 			return err
@@ -88,7 +88,7 @@ func (lp *timeStatsProcessor) processBranch(branch string, sourceRoot string) er
 			}
 
 			sp := &statsProcessor{}
-			err = sp.processAll(sourceRoot)
+			err = walkSource(sourceRoot, sp)
 			var tse *timeStatsEntry
 			if err != nil {
 				log.Printf("revision %s was in error (will still cache): %s\n", revision, err.Error())

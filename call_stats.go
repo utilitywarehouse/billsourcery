@@ -13,7 +13,7 @@ import (
 
 func callStatsTable(sourceRoot string, dsn string) error {
 	all := &allModules{}
-	if err := all.processAll(sourceRoot); err != nil {
+	if err := walkSource(sourceRoot, all); err != nil {
 		return err
 	}
 
