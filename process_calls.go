@@ -374,3 +374,8 @@ func sanitiseId(baseId string) string {
 	}
 	return "a_" + strings.Map(f, baseId)
 }
+
+func filename(path string) string {
+	_, file := filepath.Split(path)
+	return file
+}

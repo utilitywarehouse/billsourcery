@@ -137,13 +137,6 @@ func main() {
 				},
 			},
 			{
-				Name:  "executes",
-				Usage: "List execute statements. Incomplete",
-				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), newExecutions())
-				},
-			},
-			{
 				Name:  "public-procs",
 				Usage: "List public procedures",
 				Action: func(ctx *cli.Context) error {
