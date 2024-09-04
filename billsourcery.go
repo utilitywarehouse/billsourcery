@@ -196,12 +196,12 @@ func main() {
 				Name:  "reports",
 				Usage: "List report names",
 				Action: func(ctx *cli.Context) error {
-					processor := &reports{}
-					if err := walkSource(ctx.String("source-root"), processor); err != nil {
+					calls := newCalls()
+					if err := walkSource(ctx.String("source-root"), calls); err != nil {
 						return err
 					}
-					if err := processor.end(); err != nil {
-						return err
+					for _, report := range calls.reports {
+						fmt.Println(report)
 					}
 					return nil
 				},
