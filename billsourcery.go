@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	cli "github.com/jawher/mow.cli"
+	"github.com/urfave/cli/v2"
 
 	_ "net/http/pprof"
 )
@@ -31,140 +31,226 @@ type fileProcessor interface {
 func main() {
 	log.SetFlags(0)
 
-	app := cli.App("billsourcery", "Bill source code attempted wizardry")
-
 	user, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	dir := filepath.Join(user.HomeDir, "work/uw-bill-source-history")
 
-	sourceRoot := app.StringOpt("source-root", dir, "Root directory for equinox source. Subdirs Methods/ Forms/ etc are expected")
+	app := &cli.App{
+		Name:  "billsourcery",
+		Usage: "Bill source code attempted wizardry",
+		Flags: []cli.Flag{
+			&cli.StringFlag{
+				Name:  "source-root",
+				Value: dir,
+				Usage: "Root directory for equinox source. Subdirs Methods/ Forms/ etc are expected",
+			},
+		},
+		Commands: []*cli.Command{
+			{
+				Name:  "stats",
+				Usage: "Provide basic stats about the source code",
+				Action: func(cCtx *cli.Context) error {
+					doProcessAll(cCtx.String("source-root"), &statsProcessor{})
+					return nil
+				},
+			},
+			{
+				Name:  "timestats-image",
+				Usage: "Provide stats over time about the source code in a png/jpg/svg",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "cache-db",
+						Value: defaultCacheName(),
+						Usage: "timestats cache",
+					},
+					&cli.StringFlag{
+						Name:  "earliest",
+						Value: "c7937fbe95bbef245d627dccad0dfc4baad35b7c",
+						Usage: "Do not include data from before this revision",
+					},
+					&cli.StringSliceFlag{
+						Name:  "branches",
+						Usage: "Branches to include in the stats",
+						Value: cli.NewStringSlice("master"),
+					},
+					&cli.StringFlag{
+						Name:  "output",
+						Usage: "output graph for stats over time",
+						Value: defaultOutputName(),
+					},
+				},
+				Action: func(cCtx *cli.Context) error {
+					processor := newTimeStatsImageProcessor(
+						cCtx.String("cache-db"),
+						cCtx.String("earliest"),
+						cCtx.StringSlice("branches"),
+						cCtx.String("output"))
+					doProcessAll(cCtx.String("source-root"), processor)
+					return nil
+				},
+			},
+			{
+				Name:  "timestats-bq-raw",
+				Usage: "Provide raw (per file) stats over time about the source code and upload to bigquery",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "cache-db",
+						Value: defaultCacheName(),
+						Usage: "timestats cache",
+					},
+					&cli.StringFlag{
+						Name:  "earliest",
+						Value: "c7937fbe95bbef245d627dccad0dfc4baad35b7c",
+						Usage: "Do not include data from before this revision",
+					},
+					&cli.StringSliceFlag{
+						Name:  "branches",
+						Usage: "which branches to cover (comma separated, no spaces",
+						Value: cli.NewStringSlice("master"),
+					},
+				},
+				Action: func(ctx *cli.Context) error {
+					processor := newTimeStatsUnaggBQProcessor(
+						ctx.String("cache-db"),
+						ctx.String("earliest"),
+						ctx.StringSlice("branches"),
+					)
+					doProcessAll(ctx.String("source-root"), processor)
+					return nil
+				},
+			},
+			{
+				Name:  "strip-comments",
+				Usage: "Remove comments from the source files",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), &commentStripper{})
+					return nil
+				},
+			},
+			{
+				Name:  "string-constants",
+				Usage: "Dump all \" delimited string constants found in the source, one per line, to stdout (multi-line strings not included)",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), &stringConsts{})
+					return nil
+				},
+			},
+			{
+				Name:  "executes",
+				Usage: "List execute statements. Incomplete",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), newExecutions())
+					return nil
+				},
+			},
+			{
+				Name:  "public-procs",
+				Usage: "List public procedures and public externals",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), &pubProcs{})
+					return nil
+				},
+			},
+			{
+				Name:  "methods",
+				Usage: "List method names",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), &methods{})
+					return nil
+				},
+			},
+			{
+				Name:  "forms",
+				Usage: "List form names",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), &forms{})
+					return nil
+				},
+			},
+			{
+				Name:  "processes",
+				Usage: "List process names",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), &processes{})
+					return nil
+				},
+			},
+			{
+				Name:  "reports",
+				Usage: "List report names",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), &reports{})
+					return nil
+				},
+			},
+			{
+				Name:  "all-modules",
+				Usage: "List all modules (not procedures)",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), &allModules{})
+					return nil
+				},
+			},
+			{
+				Name:  "calls-neo",
+				Usage: "Produce neo4j cypher statements to create bill call graph. (Procedures not supported properly yet)",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), newCalls())
+					return nil
+				},
+			},
+			{
+				Name:  "calls-dot",
+				Usage: "Produce a .dot file of calls",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), newGVCalls())
+					return nil
+				},
+			},
+			{
+				Name:  "called-missing-methods",
+				Usage: "List any methods that are called but do not exist",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), newCalledMissingMethods())
+					return nil
+				},
+			},
+			{
+				Name:  "lexer-check",
+				Usage: "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), &lexCheck{})
+					return nil
+				},
+			},
+			{
+				Name:  "identifiers",
+				Usage: "List identifier tokens, one per line.  This is mostly for debugging the lexer",
+				Action: func(ctx *cli.Context) error {
+					doProcessAll(ctx.String("source-root"), &identifiers{})
+					return nil
+				},
+			},
+			{
+				Name:  "calls-stats-table",
+				Usage: "Produce a table of module call counts",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "dsn",
+						Usage: "bill pg mirror data source name",
+						Value: "postgres://root:xxxxxxxx@hlsv0pgrs01.tp.private:5432/bill?sslmode=disable",
+					},
+				},
 
-	app.Command("stats", "Provide basic stats about the source code", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, &statsProcessor{})
-		}
-	})
-
-	app.Command("timestats-image", "Provide stats over time about the source code in a png/jpg/svg", func(cmd *cli.Cmd) {
-		cacheDB := cmd.StringOpt("cache-db", defaultCacheName(), "timestats cache")
-		notBefore := cmd.StringOpt("earliest", "c7937fbe95bbef245d627dccad0dfc4baad35b7c", "Do not include data from before this revision")
-		branchesCs := cmd.StringOpt("branches", "master", "which branches to cover (comma separated, no spaces")
-		output := cmd.StringOpt("output", defaultOutputName(), "output graph for stats over time")
-		cmd.Action = func() {
-			branches := strings.Split(*branchesCs, ",")
-			doProcessAll(*sourceRoot, newTimeStatsImageProcessor(*cacheDB, *notBefore, branches, *output))
-		}
-	})
-
-	app.Command("timestats-bq-raw", "Provide raw (per file) stats over time about the source code and upload to bigquery", func(cmd *cli.Cmd) {
-		cacheDB := cmd.StringOpt("cache-db", defaultCacheName(), "timestats cache")
-		notBefore := cmd.StringOpt("earliest", "c7937fbe95bbef245d627dccad0dfc4baad35b7c", "Do not include data from before this revision")
-		branchesCs := cmd.StringOpt("branches", "master", "which branches to cover (comma separated, no spaces")
-		cmd.Action = func() {
-			branches := strings.Split(*branchesCs, ",")
-			doProcessAll(*sourceRoot, newTimeStatsUnaggBQProcessor(*cacheDB, *notBefore, branches))
-		}
-	})
-
-	app.Command("strip-comments", "Remove comments from the source files", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, &commentStripper{})
-		}
-	})
-
-	app.Command("string-constants", "Dump all \" delimited string constants found in the source, one per line, to stdout (multi-line strings not included)", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, &stringConsts{})
-		}
-	})
-
-	app.Command("executes", "List execute statements. Incomplete", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, newExecutions())
-		}
-	})
-
-	app.Command("public-procs", "List public procedures and public externals", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, &pubProcs{})
-		}
-	})
-
-	app.Command("methods", "List method names", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, &methods{})
-		}
-	})
-
-	app.Command("forms", "List form names", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, &forms{})
-		}
-	})
-
-	app.Command("processes", "List process names", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, &processes{})
-		}
-	})
-
-	app.Command("reports", "List report names", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, &reports{})
-		}
-	})
-
-	app.Command("all-modules", "List all modules (not procedures)", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, &allModules{})
-		}
-	})
-
-	app.Command("calls-neo", "Produce neo4j cypher statements to create bill call graph. (Procedures not supported properly yet)", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, newCalls())
-		}
-	})
-
-	app.Command("calls-dot", "Produce a .dot file of calls", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, newGVCalls())
-		}
-	})
-
-	app.Command("called-missing-methods", "List any methods that are called but do not exist", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, newCalledMissingMethods())
-		}
-	})
-
-	app.Command("lexer-check", "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, &lexCheck{})
-		}
-	})
-
-	app.Command("identifiers", "List identifier tokens, one per line.  This is mostly for debugging the lexer", func(cmd *cli.Cmd) {
-		cmd.Action = func() {
-			doProcessAll(*sourceRoot, &identifiers{})
-		}
-	})
-
-	app.Command("calls-stats-table", "Produce a table of module call counts", func(cmd *cli.Cmd) {
-		dsn := cmd.String(cli.StringOpt{
-			Name:      "dsn",
-			Desc:      "bill pg mirror data source name",
-			Value:     "postgres://root:xxxxxxxx@hlsv0pgrs01.tp.private:5432/bill?sslmode=disable",
-			EnvVar:    "BILL_PG_MIRROR_DSN",
-			HideValue: true,
-		})
-		cmd.Action = func() {
-			callStatsTable(*sourceRoot, *dsn)
-		}
-	})
+				Action: func(ctx *cli.Context) error {
+					callStatsTable(ctx.String("source-root"), ctx.String("dsn"))
+					return nil
+				},
+			},
+		},
+	}
 
 	if err := app.Run(os.Args); err != nil {
 		log.Fatal(err)
