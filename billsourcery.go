@@ -178,13 +178,6 @@ func main() {
 				},
 			},
 			{
-				Name:  "processes",
-				Usage: "List process names",
-				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), &processes{})
-				},
-			},
-			{
 				Name:  "reports",
 				Usage: "List report names",
 				Action: func(ctx *cli.Context) error {
