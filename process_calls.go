@@ -22,18 +22,9 @@ type graphOutput interface {
 	AddCall(from_id string, to_id string) error
 }
 
-func newGVCalls() *calls {
-	return &calls{
-		calls:          make(map[module]([]*module)),
-		output:         &DotGraphOutput{},
-		missingMethods: make(map[module]struct{}),
-	}
-}
-
 func newCalls() *calls {
 	return &calls{
 		calls:          make(map[module]([]*module)),
-		output:         &NeoGraphOutput{},
 		missingMethods: make(map[module]struct{}),
 	}
 }
@@ -45,8 +36,6 @@ type calls struct {
 	calls   map[module]([]*module)
 
 	missingMethods map[module]struct{}
-
-	output graphOutput
 }
 
 type DotGraphOutput struct{}
@@ -120,20 +109,20 @@ func (o *NeoGraphOutput) AddCall(from string, to string) error {
 	return nil
 }
 
-func (c *calls) end() error {
-	if err := c.output.Start(); err != nil {
+func (c *calls) writeGraph(output graphOutput) error {
+	if err := output.Start(); err != nil {
 		return err
 	}
 	for _, m := range c.methods {
 		id := encodeID(&m)
 
-		if err := c.output.AddNode(id, m.moduleName, []string{"method"}); err != nil {
+		if err := output.AddNode(id, m.moduleName, []string{"method"}); err != nil {
 			return err
 		}
 	}
 	for _, f := range c.forms {
 		id := encodeID(&f)
-		if err := c.output.AddNode(id, f.moduleName, []string{"form"}); err != nil {
+		if err := output.AddNode(id, f.moduleName, []string{"form"}); err != nil {
 			return err
 		}
 	}
@@ -141,7 +130,7 @@ func (c *calls) end() error {
 		mod := module{s, mtProcedure}
 		id := encodeID(&mod)
 
-		if err := c.output.AddNode(id, mod.moduleName, []string{"public_procedure"}); err != nil {
+		if err := output.AddNode(id, mod.moduleName, []string{"public_procedure"}); err != nil {
 			return err
 		}
 	}
@@ -153,7 +142,7 @@ func (c *calls) end() error {
 				c.missingMethods[*toModule] = struct{}{}
 			}
 
-			if err := c.output.AddCall(encodeID(&fromModule), encodeID(toModule)); err != nil {
+			if err := output.AddCall(encodeID(&fromModule), encodeID(toModule)); err != nil {
 				return err
 			}
 		}
@@ -162,19 +151,15 @@ func (c *calls) end() error {
 	for m := range c.missingMethods {
 		id := encodeID(&m)
 
-		if err := c.output.AddNode(id, m.moduleName, []string{"method", "missing"}); err != nil {
+		if err := output.AddNode(id, m.moduleName, []string{"method", "missing"}); err != nil {
 			return err
 		}
 	}
 
-	if err := c.output.End(); err != nil {
+	if err := output.End(); err != nil {
 		return err
 	}
 	return nil
-}
-
-func (c *calls) processAll(sourceRoot string) error {
-	return walkSource(sourceRoot, c)
 }
 
 func (c *calls) process(path string) error {

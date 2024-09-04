@@ -186,14 +186,22 @@ func main() {
 				Name:  "calls-neo",
 				Usage: "Produce neo4j cypher statements to create bill call graph. (Procedures not supported properly yet)",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), newCalls())
+					calls := newCalls()
+					if err := walkSource(ctx.String("source-root"), calls); err != nil {
+						return err
+					}
+					return calls.writeGraph(&NeoGraphOutput{})
 				},
 			},
 			{
 				Name:  "calls-dot",
 				Usage: "Produce a .dot file of calls",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), newGVCalls())
+					calls := newCalls()
+					if err := walkSource(ctx.String("source-root"), calls); err != nil {
+						return err
+					}
+					return calls.writeGraph(&DotGraphOutput{})
 				},
 			},
 			{
