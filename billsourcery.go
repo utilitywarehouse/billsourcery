@@ -8,6 +8,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/urfave/cli/v2"
@@ -144,9 +145,17 @@ func main() {
 			},
 			{
 				Name:  "public-procs",
-				Usage: "List public procedures and public externals",
+				Usage: "List public procedures",
 				Action: func(ctx *cli.Context) error {
-					return doProcessAll(ctx.String("source-root"), &pubProcs{})
+					calls := newCalls()
+					if err := walkSource(ctx.String("source-root"), calls); err != nil {
+						return err
+					}
+					sort.Strings(calls.procs)
+					for _, procedure := range calls.procs {
+						fmt.Println(procedure)
+					}
+					return nil
 				},
 			},
 			{
