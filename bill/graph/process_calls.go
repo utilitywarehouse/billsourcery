@@ -59,7 +59,7 @@ func (c *calls) writeGraph(output graphOutput) error {
 	for _, s := range c.procs {
 		id := encodeID(&s)
 
-		if err := output.AddNode(id, s.nodeName, []string{"public_procedure"}); err != nil {
+		if err := output.AddNode(id, s.nodeName, []string{s.nodeType.String()}); err != nil {
 			return err
 		}
 	}
