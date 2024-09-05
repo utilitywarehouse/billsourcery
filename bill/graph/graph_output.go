@@ -1,4 +1,4 @@
-package bill
+package graph
 
 import (
 	"fmt"

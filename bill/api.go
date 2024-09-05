@@ -1,11 +1,8 @@
 package bill
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
-	"sort"
 	"strings"
 )
 
@@ -15,84 +12,6 @@ func StripComments(sourceRoot string) error {
 
 func StringConstants(sourceRoot string) error {
 	return walkSource(sourceRoot, &stringConsts{})
-}
-
-func PublicProcs(sourceRoot string) error {
-	calls := newCalls()
-	if err := walkSource(sourceRoot, calls); err != nil {
-		return err
-	}
-	sort.Strings(calls.procs)
-	for _, procedure := range calls.procs {
-		fmt.Println(procedure)
-	}
-	return nil
-}
-
-func Methods(sourceRoot string) error {
-	calls := newCalls()
-	if err := walkSource(sourceRoot, calls); err != nil {
-		return err
-	}
-	for _, method := range calls.methods {
-		fmt.Println(method)
-	}
-	return nil
-}
-
-func Forms(sourceRoot string) error {
-	calls := newCalls()
-	if err := walkSource(sourceRoot, calls); err != nil {
-		return err
-	}
-	for _, form := range calls.forms {
-		fmt.Println(form)
-	}
-	return nil
-}
-
-func Reports(sourceRoot string) error {
-	calls := newCalls()
-	if err := walkSource(sourceRoot, calls); err != nil {
-		return err
-	}
-	for _, report := range calls.reports {
-		fmt.Println(report)
-	}
-	return nil
-}
-
-func CallsNeo(sourceRoot string) error {
-	calls := newCalls()
-	if err := walkSource(sourceRoot, calls); err != nil {
-		return err
-	}
-	return calls.writeGraph(&NeoGraphOutput{})
-}
-
-func CallsDot(sourceRoot string) error {
-	calls := newCalls()
-	if err := walkSource(sourceRoot, calls); err != nil {
-		return err
-	}
-	return calls.writeGraph(&DotGraphOutput{})
-}
-
-func CalledMissingMethods(sourceRoot string) error {
-	calls := newCalls()
-	if err := walkSource(sourceRoot, calls); err != nil {
-		return err
-	}
-
-	for fromModule, toModules := range calls.calls {
-		for _, toModule := range toModules {
-			if !slices.Contains(calls.methods, *toModule) {
-				fmt.Printf("%s calls missing method %s\n", fromModule, toModule)
-			}
-		}
-	}
-
-	return nil
 }
 
 func LexerCheck(sourceRoot string) error {

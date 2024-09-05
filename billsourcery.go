@@ -9,6 +9,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 	"github.com/utilitywarehouse/billsourcery/bill"
+	"github.com/utilitywarehouse/billsourcery/bill/graph"
 	"github.com/utilitywarehouse/billsourcery/bill/stats"
 
 	_ "net/http/pprof"
@@ -128,28 +129,28 @@ func main() {
 				Name:  "public-procs",
 				Usage: "List public procedures",
 				Action: func(ctx *cli.Context) error {
-					return bill.PublicProcs(ctx.String("source-root"))
+					return graph.PublicProcs(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "methods",
 				Usage: "List method names",
 				Action: func(ctx *cli.Context) error {
-					return bill.Methods(ctx.String("source-root"))
+					return graph.Methods(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "forms",
 				Usage: "List form names",
 				Action: func(ctx *cli.Context) error {
-					return bill.Forms(ctx.String("source-root"))
+					return graph.Forms(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "reports",
 				Usage: "List report names",
 				Action: func(ctx *cli.Context) error {
-					return bill.Reports(ctx.String("source-root"))
+					return graph.Reports(ctx.String("source-root"))
 				},
 			},
 			{
@@ -163,21 +164,21 @@ func main() {
 				Name:  "calls-neo",
 				Usage: "Produce neo4j cypher statements to create bill call graph. (Procedures not supported properly yet)",
 				Action: func(ctx *cli.Context) error {
-					return bill.CallsNeo(ctx.String("source-root"))
+					return graph.CallsNeo(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "calls-dot",
 				Usage: "Produce a .dot file of calls",
 				Action: func(ctx *cli.Context) error {
-					return bill.CallsDot(ctx.String("source-root"))
+					return graph.CallsDot(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "called-missing-methods",
 				Usage: "List any methods that are called but do not exist",
 				Action: func(ctx *cli.Context) error {
-					return bill.CalledMissingMethods(ctx.String("source-root"))
+					return graph.CalledMissingMethods(ctx.String("source-root"))
 				},
 			},
 			{
