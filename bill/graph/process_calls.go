@@ -37,19 +37,19 @@ func (c *calls) writeGraph(output graphOutput) error {
 	for _, m := range c.methods {
 		id := encodeID(&m)
 
-		if err := output.AddNode(id, m.nodeName, []string{"method"}); err != nil {
+		if err := output.AddNode(id, m.nodeName, []string{m.nodeType.String()}); err != nil {
 			return err
 		}
 	}
 	for _, f := range c.forms {
 		id := encodeID(&f)
-		if err := output.AddNode(id, f.nodeName, []string{"form"}); err != nil {
+		if err := output.AddNode(id, f.nodeName, []string{f.nodeType.String()}); err != nil {
 			return err
 		}
 	}
 	for _, r := range c.reports {
 		id := encodeID(&r)
-		if err := output.AddNode(id, r.nodeName, []string{"report"}); err != nil {
+		if err := output.AddNode(id, r.nodeName, []string{r.nodeType.String()}); err != nil {
 			return err
 		}
 	}
