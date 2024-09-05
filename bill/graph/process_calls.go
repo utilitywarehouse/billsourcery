@@ -34,6 +34,9 @@ func (c *calls) writeGraph(output graphOutput) error {
 	if err := output.Start(); err != nil {
 		return err
 	}
+
+	sort.Slice(c.procs, func(i, j int) bool { return c.procs[i].nodeName < c.procs[j].nodeName })
+
 	for _, m := range c.methods {
 		id := encodeID(&m)
 
@@ -54,11 +57,8 @@ func (c *calls) writeGraph(output graphOutput) error {
 		}
 	}
 
-	sort.Slice(c.procs, func(i, j int) bool { return c.procs[i].nodeName < c.procs[j].nodeName })
-
 	for _, s := range c.procs {
 		id := encodeID(&s)
-
 		if err := output.AddNode(id, s.nodeName, []string{s.nodeType.String()}); err != nil {
 			return err
 		}
