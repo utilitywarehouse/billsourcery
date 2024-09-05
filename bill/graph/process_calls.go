@@ -18,16 +18,16 @@ import (
 
 func newCalls() *calls {
 	return &calls{
-		calls: make(map[module]([]*module)),
+		calls: make(map[node]([]*node)),
 	}
 }
 
 type calls struct {
-	forms   []module
-	methods []module
-	reports []module
-	procs   []string
-	calls   map[module]([]*module)
+	forms   []node
+	methods []node
+	reports []node
+	procs   []node
+	calls   map[node]([]*node)
 }
 
 func (c *calls) writeGraph(output graphOutput) error {
@@ -37,41 +37,40 @@ func (c *calls) writeGraph(output graphOutput) error {
 	for _, m := range c.methods {
 		id := encodeID(&m)
 
-		if err := output.AddNode(id, m.moduleName, []string{"method"}); err != nil {
+		if err := output.AddNode(id, m.nodeName, []string{"method"}); err != nil {
 			return err
 		}
 	}
 	for _, f := range c.forms {
 		id := encodeID(&f)
-		if err := output.AddNode(id, f.moduleName, []string{"form"}); err != nil {
+		if err := output.AddNode(id, f.nodeName, []string{"form"}); err != nil {
 			return err
 		}
 	}
 	for _, r := range c.reports {
 		id := encodeID(&r)
-		if err := output.AddNode(id, r.moduleName, []string{"report"}); err != nil {
+		if err := output.AddNode(id, r.nodeName, []string{"report"}); err != nil {
 			return err
 		}
 	}
 
-	sort.Strings(c.procs)
+	sort.Slice(c.procs, func(i, j int) bool { return c.procs[i].nodeName < c.procs[j].nodeName })
 
 	for _, s := range c.procs {
-		mod := module{s, mtProcedure}
-		id := encodeID(&mod)
+		id := encodeID(&s)
 
-		if err := output.AddNode(id, mod.moduleName, []string{"public_procedure"}); err != nil {
+		if err := output.AddNode(id, s.nodeName, []string{"public_procedure"}); err != nil {
 			return err
 		}
 	}
 
-	fromModuleSorted := make([]module, 0, len(c.calls))
+	fromModuleSorted := make([]node, 0, len(c.calls))
 	for k := range c.calls {
 		fromModuleSorted = append(fromModuleSorted, k)
 	}
-	sort.Slice(fromModuleSorted, func(i int, j int) bool { return fromModuleSorted[i].moduleName < fromModuleSorted[j].moduleName })
+	sort.Slice(fromModuleSorted, func(i int, j int) bool { return fromModuleSorted[i].nodeName < fromModuleSorted[j].nodeName })
 
-	missingMethods := make(map[module]struct{})
+	missingMethods := make(map[node]struct{})
 
 	for _, fromModule := range fromModuleSorted {
 		toModules := c.calls[fromModule]
@@ -87,16 +86,16 @@ func (c *calls) writeGraph(output graphOutput) error {
 		}
 	}
 
-	missingSorted := make([]module, 0, len(missingMethods))
+	missingSorted := make([]node, 0, len(missingMethods))
 	for missing := range missingMethods {
 		missingSorted = append(missingSorted, missing)
 	}
-	sort.Slice(missingSorted, func(i int, j int) bool { return missingSorted[i].moduleName < missingSorted[j].moduleName })
+	sort.Slice(missingSorted, func(i int, j int) bool { return missingSorted[i].nodeName < missingSorted[j].nodeName })
 
 	for _, m := range missingSorted {
 		id := encodeID(&m)
 
-		if err := output.AddNode(id, m.moduleName, []string{"method", "missing"}); err != nil {
+		if err := output.AddNode(id, m.nodeName, []string{"method", "missing"}); err != nil {
 			return err
 		}
 	}
@@ -110,15 +109,17 @@ func (c *calls) writeGraph(output graphOutput) error {
 func (c *calls) process(path string) error {
 	dir, file := filepath.Split(path)
 	if strings.HasSuffix(dir, "/Forms/") {
-		c.forms = append(c.forms, moduleFromFullFilename(file))
+		c.forms = append(c.forms, nodeFromFullFilename(file))
 	} else if strings.HasSuffix(dir, "/Methods/") {
-		c.methods = append(c.methods, moduleFromFullFilename(file))
+		c.methods = append(c.methods, nodeFromFullFilename(file))
 	} else if strings.HasSuffix(dir, "/Reports/") {
-		c.reports = append(c.reports, moduleFromFullFilename(file))
+		c.reports = append(c.reports, nodeFromFullFilename(file))
 	}
 
-	if err := c.processMethodCalls(path); err != nil {
-		return err
+	if !strings.HasSuffix(dir, "/Procedures/") {
+		if err := c.processMethodCalls(path); err != nil {
+			return err
+		}
 	}
 
 	if err := c.processPublicProcs(path); err != nil {
@@ -127,7 +128,9 @@ func (c *calls) process(path string) error {
 	return nil
 }
 
+// TODO: this doesn't currently handle calls from procedures to methods.
 func (c *calls) processMethodCalls(path string) error {
+
 	f, err := os.Open(path)
 	if err != nil {
 		return err
@@ -168,7 +171,7 @@ loop:
 		}
 	}
 
-	fromModule := moduleFromFullFilename(filename(path))
+	fromModule := nodeFromFullFilename(filename(path))
 	for _, stmt := range stmts {
 		toks := stmt.tokens
 		for toks[0].tok != equilex.Execute {
@@ -206,7 +209,7 @@ loop:
 				to = to[1 : len(to)-1]
 				to = strings.TrimSuffix(to, ".jcl")
 
-				to_mod := module{to, mtMethod}
+				to_mod := node{to, ntMethod}
 
 				c.calls[fromModule] = append(c.calls[fromModule], &to_mod)
 
@@ -262,7 +265,7 @@ loop:
 
 	for _, s := range stmts {
 		if s.tokens[0].tok == equilex.Public && s.tokens[1].tok == equilex.WS && s.tokens[2].tok == equilex.Procedure && s.tokens[3].tok == equilex.WS {
-			c.procs = append(c.procs, s.tokens[4].lit)
+			c.procs = append(c.procs, node{s.tokens[4].lit, ntProcedure})
 		} else {
 			log.Printf("skipping procedure %v\n", s)
 		}
@@ -271,8 +274,8 @@ loop:
 	return nil
 }
 
-func encodeID(mod *module) string {
-	baseId := mod.moduleName + "_" + mod.moduleType.String()
+func encodeID(node *node) string {
+	baseId := node.nodeName + "_" + node.nodeType.String()
 	return sanitiseId(baseId)
 }
 
@@ -297,55 +300,53 @@ func filename(path string) string {
 	return file
 }
 
-type module struct {
-	moduleName string
-	moduleType moduleType
+type node struct {
+	nodeName string
+	nodeType nodeType
 }
 
-func (m module) String() string {
-	return m.moduleName
+func (m node) String() string {
+	return m.nodeName
 }
 
-type moduleType string
+type nodeType string
 
 const (
-	mtExport    moduleType = "export"
-	mtForm      moduleType = "form"
-	mtImport    moduleType = "import"
-	mtMethod    moduleType = "method"
-	mtProcedure moduleType = "procedure"
-	mtProcess   moduleType = "process"
-	mtQuery     moduleType = "query"
-	mtReport    moduleType = "report"
+	ntExport    nodeType = "export"
+	ntForm      nodeType = "form"
+	ntImport    nodeType = "import"
+	ntMethod    nodeType = "method"
+	ntProcedure nodeType = "procedure"
+	ntProcess   nodeType = "process"
+	ntQuery     nodeType = "query"
+	ntReport    nodeType = "report"
 )
 
-func (mt moduleType) String() string {
+func (mt nodeType) String() string {
 	return string(mt)
 }
 
-func moduleFromFullFilename(filename string) module {
+func nodeFromFullFilename(filename string) node {
 	filename = strings.ToLower(filename)
-	var mt moduleType
+	var mt nodeType
 	switch {
 	case strings.HasSuffix(filename, ".ex@.txt"):
-		mt = mtExport
+		mt = ntExport
 	case strings.HasSuffix(filename, ".fr@.txt"):
-		mt = mtForm
+		mt = ntForm
 	case strings.HasSuffix(filename, ".im@.txt"):
-		mt = mtImport
+		mt = ntImport
 	case strings.HasSuffix(filename, ".jc@.txt"):
-		mt = mtMethod
-	case strings.HasSuffix(filename, ".pp@.txt"):
-		mt = mtProcedure
+		mt = ntMethod
 	case strings.HasSuffix(filename, ".pr@.txt"):
-		mt = mtProcess
+		mt = ntProcess
 	case strings.HasSuffix(filename, ".qr@.txt"):
-		mt = mtQuery
+		mt = ntQuery
 	case strings.HasSuffix(filename, ".re@.txt"):
-		mt = mtReport
+		mt = ntReport
 	default:
-		log.Panicf("bug: %s\n", filename)
+		log.Panicf("can't create node for filename : %s\n", filename)
 	}
 	name := filename[0 : len(filename)-8]
-	return module{name, mt}
+	return node{name, mt}
 }

@@ -14,7 +14,7 @@ func PublicProcs(sourceRoot string) error {
 	if err := walkSource(sourceRoot, calls); err != nil {
 		return err
 	}
-	sort.Strings(calls.procs)
+	sort.Slice(calls.procs, func(i, j int) bool { return calls.procs[i].nodeName < calls.procs[j].nodeName })
 	for _, procedure := range calls.procs {
 		fmt.Println(procedure)
 	}
