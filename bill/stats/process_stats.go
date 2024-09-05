@@ -1,8 +1,10 @@
-package bill
+package stats
 
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/utilitywarehouse/equilex"
 	"golang.org/x/text/encoding/charmap"
@@ -54,4 +56,40 @@ func (lp *statsProcessor) process(path string) error {
 			return nil
 		}
 	}
+}
+
+func walkSource(sourceRoot string, proc fileProcessor) error {
+	inSourceDir := func(root, path string) bool {
+		relative, err := filepath.Rel(root, path)
+		if err != nil {
+			panic(err)
+		}
+		switch filepath.Dir(relative) {
+		case "Exports", "Forms", "Imports", "Methods", "Procedures", "Processes", "Queries", "Reports":
+			return true
+		default:
+			return false
+		}
+	}
+
+	return filepath.Walk(sourceRoot, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.Name() == ".git" {
+			return filepath.SkipDir
+		}
+		if !info.IsDir() && strings.HasSuffix(path, ".txt") && inSourceDir(sourceRoot, path) {
+			//	log.Println(path)
+			err := proc.process(path)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+type fileProcessor interface {
+	process(path string) error
 }

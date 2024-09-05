@@ -1,4 +1,4 @@
-package bill
+package stats
 
 import (
 	"bufio"
@@ -239,4 +239,57 @@ func (tsc rawstatsCache) get(rev string) (*rawCacheEntry, error) {
 		return nil, err
 	}
 	return s, nil
+}
+
+func moduleFromFullFilename(filename string) module {
+	filename = strings.ToLower(filename)
+	var mt moduleType
+	switch {
+	case strings.HasSuffix(filename, ".ex@.txt"):
+		mt = mtExport
+	case strings.HasSuffix(filename, ".fr@.txt"):
+		mt = mtForm
+	case strings.HasSuffix(filename, ".im@.txt"):
+		mt = mtImport
+	case strings.HasSuffix(filename, ".jc@.txt"):
+		mt = mtMethod
+	case strings.HasSuffix(filename, ".pp@.txt"):
+		mt = mtProcedure
+	case strings.HasSuffix(filename, ".pr@.txt"):
+		mt = mtProcess
+	case strings.HasSuffix(filename, ".qr@.txt"):
+		mt = mtQuery
+	case strings.HasSuffix(filename, ".re@.txt"):
+		mt = mtReport
+	default:
+		log.Panicf("bug: %s\n", filename)
+	}
+	name := filename[0 : len(filename)-8]
+	return module{name, mt}
+}
+
+type module struct {
+	moduleName string
+	moduleType moduleType
+}
+
+func (m module) String() string {
+	return m.moduleName
+}
+
+type moduleType string
+
+const (
+	mtExport    moduleType = "export"
+	mtForm      moduleType = "form"
+	mtImport    moduleType = "import"
+	mtMethod    moduleType = "method"
+	mtProcedure moduleType = "procedure"
+	mtProcess   moduleType = "process"
+	mtQuery     moduleType = "query"
+	mtReport    moduleType = "report"
+)
+
+func (mt moduleType) String() string {
+	return string(mt)
 }

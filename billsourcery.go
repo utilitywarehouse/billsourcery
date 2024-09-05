@@ -9,6 +9,7 @@ import (
 
 	"github.com/urfave/cli/v2"
 	"github.com/utilitywarehouse/billsourcery/bill"
+	"github.com/utilitywarehouse/billsourcery/bill/stats"
 
 	_ "net/http/pprof"
 )
@@ -43,7 +44,7 @@ func main() {
 				Name:  "stats",
 				Usage: "Provide basic stats about the source code",
 				Action: func(ctx *cli.Context) error {
-					return bill.Stats(ctx.String("source-root"))
+					return stats.Stats(ctx.String("source-root"))
 				},
 			},
 			{
@@ -72,7 +73,7 @@ func main() {
 					},
 				},
 				Action: func(cCtx *cli.Context) error {
-					return bill.TimestatsImage(
+					return stats.TimestatsImage(
 						cCtx.String("source-root"),
 						cCtx.String("cache-db"),
 						cCtx.String("earliest"),
@@ -101,7 +102,7 @@ func main() {
 					},
 				},
 				Action: func(ctx *cli.Context) error {
-					return bill.TimestatsBqRaw(
+					return stats.TimestatsBqRaw(
 						ctx.String("source-root"),
 						ctx.String("cache-db"),
 						ctx.String("earliest"),
