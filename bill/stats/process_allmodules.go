@@ -1,4 +1,4 @@
-package bill
+package stats
 
 import (
 	"fmt"
@@ -6,6 +6,18 @@ import (
 	"path/filepath"
 	"strings"
 )
+
+func AllModules(sourceRoot string) error {
+	processor := &allModules{}
+	if err := walkSource(sourceRoot, processor); err != nil {
+		return err
+	}
+
+	if err := processor.print(); err != nil {
+		return err
+	}
+	return nil
+}
 
 type module struct {
 	moduleName string

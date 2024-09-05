@@ -156,7 +156,7 @@ func main() {
 				Name:  "all-modules",
 				Usage: "List all modules (not procedures)",
 				Action: func(ctx *cli.Context) error {
-					return bill.AllModules(ctx.String("source-root"))
+					return stats.AllModules(ctx.String("source-root"))
 				},
 			},
 			{

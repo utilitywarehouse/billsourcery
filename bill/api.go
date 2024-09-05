@@ -62,18 +62,6 @@ func Reports(sourceRoot string) error {
 	return nil
 }
 
-func AllModules(sourceRoot string) error {
-	processor := &allModules{}
-	if err := walkSource(sourceRoot, processor); err != nil {
-		return err
-	}
-
-	if err := processor.print(); err != nil {
-		return err
-	}
-	return nil
-}
-
 func CallsNeo(sourceRoot string) error {
 	calls := newCalls()
 	if err := walkSource(sourceRoot, calls); err != nil {
