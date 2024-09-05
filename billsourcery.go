@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/urfave/cli/v2"
+	"github.com/utilitywarehouse/billsourcery/bill"
 
 	_ "net/http/pprof"
 )
@@ -16,10 +17,6 @@ func init() {
 	go func() {
 		panic(http.ListenAndServe(":6060", nil))
 	}()
-}
-
-type fileProcessor interface {
-	process(path string) error
 }
 
 func main() {
@@ -46,7 +43,7 @@ func main() {
 				Name:  "stats",
 				Usage: "Provide basic stats about the source code",
 				Action: func(ctx *cli.Context) error {
-					return Stats(ctx.String("source-root"))
+					return bill.Stats(ctx.String("source-root"))
 				},
 			},
 			{
@@ -75,7 +72,7 @@ func main() {
 					},
 				},
 				Action: func(cCtx *cli.Context) error {
-					return TimestatsImage(
+					return bill.TimestatsImage(
 						cCtx.String("source-root"),
 						cCtx.String("cache-db"),
 						cCtx.String("earliest"),
@@ -104,7 +101,7 @@ func main() {
 					},
 				},
 				Action: func(ctx *cli.Context) error {
-					return TimestatsBqRaw(
+					return bill.TimestatsBqRaw(
 						ctx.String("source-root"),
 						ctx.String("cache-db"),
 						ctx.String("earliest"),
@@ -116,84 +113,84 @@ func main() {
 				Name:  "strip-comments",
 				Usage: "Remove comments from the source files",
 				Action: func(ctx *cli.Context) error {
-					return StripComments(ctx.String("source-root"))
+					return bill.StripComments(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "string-constants",
 				Usage: "Dump all \" delimited string constants found in the source, one per line, to stdout (multi-line strings not included)",
 				Action: func(ctx *cli.Context) error {
-					return StringConstants(ctx.String("source-root"))
+					return bill.StringConstants(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "public-procs",
 				Usage: "List public procedures",
 				Action: func(ctx *cli.Context) error {
-					return PublicProcs(ctx.String("source-root"))
+					return bill.PublicProcs(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "methods",
 				Usage: "List method names",
 				Action: func(ctx *cli.Context) error {
-					return Methods(ctx.String("source-root"))
+					return bill.Methods(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "forms",
 				Usage: "List form names",
 				Action: func(ctx *cli.Context) error {
-					return Forms(ctx.String("source-root"))
+					return bill.Forms(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "reports",
 				Usage: "List report names",
 				Action: func(ctx *cli.Context) error {
-					return Reports(ctx.String("source-root"))
+					return bill.Reports(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "all-modules",
 				Usage: "List all modules (not procedures)",
 				Action: func(ctx *cli.Context) error {
-					return AllModules(ctx.String("source-root"))
+					return bill.AllModules(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "calls-neo",
 				Usage: "Produce neo4j cypher statements to create bill call graph. (Procedures not supported properly yet)",
 				Action: func(ctx *cli.Context) error {
-					return CallsNeo(ctx.String("source-root"))
+					return bill.CallsNeo(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "calls-dot",
 				Usage: "Produce a .dot file of calls",
 				Action: func(ctx *cli.Context) error {
-					return CallsDot(ctx.String("source-root"))
+					return bill.CallsDot(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "called-missing-methods",
 				Usage: "List any methods that are called but do not exist",
 				Action: func(ctx *cli.Context) error {
-					return CalledMissingMethods(ctx.String("source-root"))
+					return bill.CalledMissingMethods(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "lexer-check",
 				Usage: "Ensure the lexer can correctly scan all source. This is mostly for debugging the lexer",
 				Action: func(ctx *cli.Context) error {
-					return LexerCheck(ctx.String("source-root"))
+					return bill.LexerCheck(ctx.String("source-root"))
 				},
 			},
 			{
 				Name:  "identifiers",
 				Usage: "List identifier tokens, one per line.  This is mostly for debugging the lexer",
 				Action: func(ctx *cli.Context) error {
-					return Identifiers(ctx.String("source-root"))
+					return bill.Identifiers(ctx.String("source-root"))
 				},
 			},
 			{
@@ -208,7 +205,7 @@ func main() {
 				},
 
 				Action: func(ctx *cli.Context) error {
-					return CallStatsTable(ctx.String("source-root"), ctx.String("dsn"))
+					return bill.CallStatsTable(ctx.String("source-root"), ctx.String("dsn"))
 				},
 			},
 		},

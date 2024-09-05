@@ -1,7 +1,7 @@
-package main
+package bill
 
 import (
-	"fmt"
+	"log"
 	"os"
 
 	"github.com/utilitywarehouse/equilex"
@@ -9,9 +9,11 @@ import (
 	"golang.org/x/text/transform"
 )
 
-type stringConsts struct{}
+type lexCheck struct {
+	anyErrors bool
+}
 
-func (lp *stringConsts) process(path string) error {
+func (lp *lexCheck) process(path string) error {
 	f, err := os.Open(path)
 	if err != nil {
 		return err
@@ -20,6 +22,7 @@ func (lp *stringConsts) process(path string) error {
 
 	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
 
+loop:
 	for {
 		tok, lit, err := l.Scan()
 		if err != nil {
@@ -28,9 +31,15 @@ func (lp *stringConsts) process(path string) error {
 
 		switch tok {
 		case equilex.EOF:
-			return nil
-		case equilex.StringConstant:
-			fmt.Println(lit[1 : len(lit)-1])
+			break loop
+		case equilex.Illegal:
+			lp.anyErrors = true
+			log.Printf("illegal token in file '%s' : '%v'\n", path, lit)
 		}
 	}
+
+	if !lp.anyErrors {
+		log.Println("no lexer errors.")
+	}
+	return nil
 }

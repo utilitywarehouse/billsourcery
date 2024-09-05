@@ -1,4 +1,4 @@
-package main
+package bill
 
 import (
 	"database/sql"

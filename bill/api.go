@@ -1,4 +1,4 @@
-package main
+package bill
 
 import (
 	"fmt"
@@ -186,4 +186,8 @@ func walkSource(sourceRoot string, proc fileProcessor) error {
 		}
 		return nil
 	})
+}
+
+type fileProcessor interface {
+	process(path string) error
 }
