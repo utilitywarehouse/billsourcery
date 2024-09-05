@@ -115,10 +115,6 @@ func Identifiers(sourceRoot string) error {
 	return walkSource(sourceRoot, &identifiers{})
 }
 
-func CallStatsTable(sourceRoot string, dsn string) error {
-	return callStatsTable(sourceRoot, dsn)
-}
-
 func walkSource(sourceRoot string, proc fileProcessor) error {
 	inSourceDir := func(root, path string) bool {
 		relative, err := filepath.Rel(root, path)

@@ -206,7 +206,7 @@ func main() {
 				},
 
 				Action: func(ctx *cli.Context) error {
-					return bill.CallStatsTable(ctx.String("source-root"), ctx.String("dsn"))
+					return stats.CallStatsTable(ctx.String("source-root"), ctx.String("dsn"))
 				},
 			},
 		},

@@ -1,8 +1,10 @@
-package bill
+package stats
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -10,6 +12,10 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/olekukonko/tablewriter"
 )
+
+func CallStatsTable(sourceRoot string, dsn string) error {
+	return callStatsTable(sourceRoot, dsn)
+}
 
 func callStatsTable(sourceRoot string, dsn string) error {
 	all := &allModules{}
@@ -78,4 +84,50 @@ func callStatsTable(sourceRoot string, dsn string) error {
 	tw.Render()
 
 	return nil
+}
+
+type allModules struct {
+	modules []module
+}
+
+func (m *allModules) print() error {
+	for _, method := range m.modules {
+		fmt.Println(method)
+	}
+	return nil
+}
+
+func (m *allModules) process(path string) error {
+	_, file := filepath.Split(path)
+	m.modules = append(m.modules, moduleFromFullFilename(file))
+	return nil
+}
+
+func mapModExt(in string) moduleType {
+	switch in {
+	case "exp":
+		return mtExport
+	case "frm":
+		return mtForm
+	case "fr":
+		return mtForm
+	case "f":
+		return mtForm
+	case "imp":
+		return mtImport
+	case "jcl":
+		return mtMethod
+	case "jc":
+		return mtMethod
+	case "j":
+		return mtMethod
+		//	return mtProcedure
+		//	return mtProcess
+	case "qry":
+		return mtQuery
+	case "rep":
+		return mtReport
+	default:
+		panic(fmt.Sprintf("can't map module extension to type : %s\n", in))
+	}
 }
