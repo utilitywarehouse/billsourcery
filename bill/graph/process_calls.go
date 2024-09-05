@@ -265,7 +265,7 @@ loop:
 
 	for _, s := range stmts {
 		if s.tokens[0].tok == equilex.Public && s.tokens[1].tok == equilex.WS && s.tokens[2].tok == equilex.Procedure && s.tokens[3].tok == equilex.WS {
-			c.procs = append(c.procs, node{s.tokens[4].lit, ntProcedure})
+			c.procs = append(c.procs, node{s.tokens[4].lit, ntPubProc})
 		} else {
 			log.Printf("skipping procedure %v\n", s)
 		}
@@ -312,14 +312,14 @@ func (m node) String() string {
 type nodeType string
 
 const (
-	ntExport    nodeType = "export"
-	ntForm      nodeType = "form"
-	ntImport    nodeType = "import"
-	ntMethod    nodeType = "method"
-	ntProcedure nodeType = "procedure"
-	ntProcess   nodeType = "process"
-	ntQuery     nodeType = "query"
-	ntReport    nodeType = "report"
+	ntExport  nodeType = "export"
+	ntForm    nodeType = "form"
+	ntImport  nodeType = "import"
+	ntMethod  nodeType = "method"
+	ntPubProc nodeType = "public_procedure"
+	ntProcess nodeType = "process"
+	ntQuery   nodeType = "query"
+	ntReport  nodeType = "report"
 )
 
 func (mt nodeType) String() string {
