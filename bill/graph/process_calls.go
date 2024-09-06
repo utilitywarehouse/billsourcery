@@ -36,12 +36,12 @@ func (c *calls) writeGraph(output graphOutput) error {
 	for _, node := range c.nodes {
 		allNodes = append(allNodes, node)
 	}
-	sort.Slice(allNodes, func(i, j int) bool { return allNodes[i].nodeName < allNodes[j].nodeName })
+	sort.Slice(allNodes, func(i, j int) bool { return allNodes[i].Name < allNodes[j].Name })
 
 	for _, n := range allNodes {
 		id := sanitiseId(n.id())
 
-		if err := output.AddNode(id, n.nodeName, []string{n.nodeType.String()}); err != nil {
+		if err := output.AddNode(id, n.Name, []string{n.Type.String()}); err != nil {
 			return err
 		}
 	}
@@ -50,7 +50,7 @@ func (c *calls) writeGraph(output graphOutput) error {
 	for k := range c.calls {
 		fromModuleSorted = append(fromModuleSorted, k)
 	}
-	sort.Slice(fromModuleSorted, func(i int, j int) bool { return fromModuleSorted[i].nodeName < fromModuleSorted[j].nodeName })
+	sort.Slice(fromModuleSorted, func(i int, j int) bool { return fromModuleSorted[i].Name < fromModuleSorted[j].Name })
 
 	missingMethods := make(map[node]struct{})
 
@@ -73,10 +73,10 @@ func (c *calls) writeGraph(output graphOutput) error {
 	for missing := range missingMethods {
 		missingSorted = append(missingSorted, missing)
 	}
-	sort.Slice(missingSorted, func(i int, j int) bool { return missingSorted[i].nodeName < missingSorted[j].nodeName })
+	sort.Slice(missingSorted, func(i int, j int) bool { return missingSorted[i].Name < missingSorted[j].Name })
 
 	for _, n := range missingSorted {
-		if err := output.AddNode(sanitiseId(n.id()), n.nodeName, []string{"method", "missing"}); err != nil {
+		if err := output.AddNode(sanitiseId(n.id()), n.Name, []string{"method", "missing"}); err != nil {
 			return err
 		}
 	}
@@ -277,16 +277,16 @@ func filename(path string) string {
 }
 
 type node struct {
-	nodeName string
-	nodeType nodeType
+	Name string
+	Type nodeType
 }
 
 func (m node) String() string {
-	return m.nodeName
+	return m.Name
 }
 
 func (n node) id() string {
-	return n.nodeName + "_" + n.nodeType.String()
+	return n.Name + "_" + n.Type.String()
 }
 
 type nodeType string
