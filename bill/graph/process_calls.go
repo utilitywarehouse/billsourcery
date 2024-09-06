@@ -34,10 +34,10 @@ func (c *calls) writeGraph(output graphOutput) error {
 
 	sort.Slice(c.nodes, func(i, j int) bool { return c.nodes[i].nodeName < c.nodes[j].nodeName })
 
-	for _, m := range c.nodes {
-		id := encodeID(&m)
+	for _, n := range c.nodes {
+		id := sanitiseId(n.id())
 
-		if err := output.AddNode(id, m.nodeName, []string{m.nodeType.String()}); err != nil {
+		if err := output.AddNode(id, n.nodeName, []string{n.nodeType.String()}); err != nil {
 			return err
 		}
 	}
@@ -58,7 +58,7 @@ func (c *calls) writeGraph(output graphOutput) error {
 				missingMethods[*toModule] = struct{}{}
 			}
 
-			if err := output.AddCall(encodeID(&fromModule), encodeID(toModule)); err != nil {
+			if err := output.AddCall(sanitiseId(fromModule.id()), sanitiseId(toModule.id())); err != nil {
 				return err
 			}
 		}
@@ -70,10 +70,8 @@ func (c *calls) writeGraph(output graphOutput) error {
 	}
 	sort.Slice(missingSorted, func(i int, j int) bool { return missingSorted[i].nodeName < missingSorted[j].nodeName })
 
-	for _, m := range missingSorted {
-		id := encodeID(&m)
-
-		if err := output.AddNode(id, m.nodeName, []string{"method", "missing"}); err != nil {
+	for _, n := range missingSorted {
+		if err := output.AddNode(sanitiseId(n.id()), n.nodeName, []string{"method", "missing"}); err != nil {
 			return err
 		}
 	}
@@ -252,11 +250,6 @@ loop:
 	return nil
 }
 
-func encodeID(node *node) string {
-	baseId := node.nodeName + "_" + node.nodeType.String()
-	return sanitiseId(baseId)
-}
-
 func sanitiseId(baseId string) string {
 	f := func(r rune) rune {
 		if r >= 'a' && r <= 'z' {
@@ -285,6 +278,10 @@ type node struct {
 
 func (m node) String() string {
 	return m.nodeName
+}
+
+func (n node) id() string {
+	return n.nodeName + "_" + n.nodeType.String()
 }
 
 type nodeType string
