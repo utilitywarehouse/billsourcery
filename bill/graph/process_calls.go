@@ -46,16 +46,10 @@ func (c *calls) writeGraph(output graphOutput) error {
 		}
 	}
 
-	fromModuleSorted := make([]node, 0, len(c.calls))
-	for k := range c.calls {
-		fromModuleSorted = append(fromModuleSorted, k)
-	}
-	sort.Slice(fromModuleSorted, func(i int, j int) bool { return fromModuleSorted[i].Name < fromModuleSorted[j].Name })
-
 	missingMethods := make(map[node]struct{})
 
-	for _, fromModule := range fromModuleSorted {
-		toModules := c.calls[fromModule]
+	for _, fromModule := range allNodes {
+		toModules := c.calls[*fromModule]
 
 		for _, toModule := range toModules {
 			_, ok := c.nodes[toModule.id()]
