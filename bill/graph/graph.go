@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 	"sort"
 	"strings"
 )
@@ -30,14 +29,19 @@ func listNodeType(sourceRoot string, nodeType nodeType) error {
 	if err := walkSource(sourceRoot, calls); err != nil {
 		return err
 	}
-	sort.Slice(calls.nodes, func(i, j int) bool { return calls.nodes[i].nodeName < calls.nodes[j].nodeName })
+
+	var allNodes []*node
 	for _, node := range calls.nodes {
+		allNodes = append(allNodes, node)
+	}
+	sort.Slice(allNodes, func(i, j int) bool { return allNodes[i].nodeName < allNodes[j].nodeName })
+
+	for _, node := range allNodes {
 		if node.nodeType == nodeType {
 			fmt.Println(node)
 		}
 	}
 	return nil
-
 }
 
 func CallsNeo(sourceRoot string) error {
@@ -64,7 +68,8 @@ func CalledMissingMethods(sourceRoot string) error {
 
 	for fromModule, toModules := range calls.calls {
 		for _, toModule := range toModules {
-			if !slices.Contains(calls.nodes, *toModule) {
+			_, ok := calls.nodes[toModule.id()]
+			if !ok {
 				fmt.Printf("%s calls missing method %s\n", fromModule, toModule)
 			}
 		}

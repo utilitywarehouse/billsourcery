@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"slices"
 	"sort"
 
 	//"net/url"
@@ -18,12 +17,13 @@ import (
 
 func newCalls() *calls {
 	return &calls{
+		nodes: make(map[string]*node),
 		calls: make(map[node]([]*node)),
 	}
 }
 
 type calls struct {
-	nodes []node
+	nodes map[string]*node
 	calls map[node]([]*node)
 }
 
@@ -32,9 +32,13 @@ func (c *calls) writeGraph(output graphOutput) error {
 		return err
 	}
 
-	sort.Slice(c.nodes, func(i, j int) bool { return c.nodes[i].nodeName < c.nodes[j].nodeName })
+	var allNodes []*node
+	for _, node := range c.nodes {
+		allNodes = append(allNodes, node)
+	}
+	sort.Slice(allNodes, func(i, j int) bool { return allNodes[i].nodeName < allNodes[j].nodeName })
 
-	for _, n := range c.nodes {
+	for _, n := range allNodes {
 		id := sanitiseId(n.id())
 
 		if err := output.AddNode(id, n.nodeName, []string{n.nodeType.String()}); err != nil {
@@ -54,7 +58,8 @@ func (c *calls) writeGraph(output graphOutput) error {
 		toModules := c.calls[fromModule]
 
 		for _, toModule := range toModules {
-			if !slices.Contains(c.nodes, *toModule) {
+			_, ok := c.nodes[toModule.id()]
+			if !ok {
 				missingMethods[*toModule] = struct{}{}
 			}
 
@@ -87,7 +92,8 @@ func (c *calls) process(path string) error {
 	if strings.HasSuffix(dir, "/Forms/") ||
 		strings.HasSuffix(dir, "/Methods/") ||
 		strings.HasSuffix(dir, "/Reports/") {
-		c.nodes = append(c.nodes, nodeFromFullFilename(file))
+		node := nodeFromFullFilename(file)
+		c.nodes[node.id()] = &node
 	}
 
 	if !strings.HasSuffix(dir, "/Procedures/") {
@@ -239,7 +245,8 @@ loop:
 
 	for _, s := range stmts {
 		if s.tokens[0].tok == equilex.Public && s.tokens[1].tok == equilex.WS && s.tokens[2].tok == equilex.Procedure && s.tokens[3].tok == equilex.WS {
-			c.nodes = append(c.nodes, node{s.tokens[4].lit, ntPubProc})
+			node := node{s.tokens[4].lit, ntPubProc}
+			c.nodes[node.id()] = &node
 		} else {
 			log.Printf("skipping procedure %v\n", s)
 		}
