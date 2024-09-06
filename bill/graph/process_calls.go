@@ -84,11 +84,9 @@ func (c *calls) writeGraph(output graphOutput) error {
 
 func (c *calls) process(path string) error {
 	dir, file := filepath.Split(path)
-	if strings.HasSuffix(dir, "/Forms/") {
-		c.nodes = append(c.nodes, nodeFromFullFilename(file))
-	} else if strings.HasSuffix(dir, "/Methods/") {
-		c.nodes = append(c.nodes, nodeFromFullFilename(file))
-	} else if strings.HasSuffix(dir, "/Reports/") {
+	if strings.HasSuffix(dir, "/Forms/") ||
+		strings.HasSuffix(dir, "/Methods/") ||
+		strings.HasSuffix(dir, "/Reports/") {
 		c.nodes = append(c.nodes, nodeFromFullFilename(file))
 	}
 
