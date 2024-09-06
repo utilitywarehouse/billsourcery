@@ -66,8 +66,8 @@ func CalledMissingMethods(sourceRoot string) error {
 		return err
 	}
 
-	for fromModule, toModules := range calls.calls {
-		for _, toModule := range toModules {
+	for _, fromModule := range calls.nodes {
+		for _, toModule := range fromModule.calls {
 			_, ok := calls.nodes[toModule]
 			if !ok {
 				fmt.Printf("%s calls missing method %s\n", fromModule.Name, toModule.Name)

@@ -18,13 +18,11 @@ import (
 func newCalls() *calls {
 	return &calls{
 		nodes: make(map[nodeId]*node),
-		calls: make(map[nodeId]([]nodeId)),
 	}
 }
 
 type calls struct {
 	nodes map[nodeId]*node
-	calls map[nodeId]([]nodeId)
 }
 
 func (c *calls) writeGraph(output graphOutput) error {
@@ -49,7 +47,7 @@ func (c *calls) writeGraph(output graphOutput) error {
 	missingMethods := make(map[nodeId]struct{})
 
 	for _, fromModule := range allNodes {
-		toModules := c.calls[fromModule.nodeId]
+		toModules := fromModule.calls
 
 		for _, toModule := range toModules {
 			_, ok := c.nodes[toModule]
@@ -86,8 +84,9 @@ func (c *calls) process(path string) error {
 	if strings.HasSuffix(dir, "/Forms/") ||
 		strings.HasSuffix(dir, "/Methods/") ||
 		strings.HasSuffix(dir, "/Reports/") {
-		node := nodeFromFullFilename(file)
-		c.nodes[node.nodeId] = &node
+		nodeId := nodeFromFullFilename(file)
+		node := newNode(nodeId.Name, nodeId.Type)
+		c.nodes[nodeId] = &node
 	}
 
 	if !strings.HasSuffix(dir, "/Procedures/") {
@@ -145,7 +144,9 @@ loop:
 		}
 	}
 
-	fromModule := nodeFromFullFilename(filename(path))
+	fromNodeId := nodeFromFullFilename(filename(path))
+	fromNode := c.nodes[fromNodeId]
+
 	for _, stmt := range stmts {
 		toks := stmt.tokens
 		for toks[0].tok != equilex.Execute {
@@ -185,10 +186,10 @@ loop:
 
 				to_mod := nodeId{to, ntMethod}
 
-				c.calls[fromModule.nodeId] = append(c.calls[fromModule.nodeId], to_mod)
+				fromNode.calls = append(fromNode.calls, to_mod)
 
 			} else {
-				log.Printf("call from %s to variable method '%s' - skipping", fromModule, to)
+				log.Printf("call from %s to variable method '%s' - skipping", fromNode.Name, to)
 			}
 		default:
 			for i, t := range toks {
@@ -281,6 +282,7 @@ func (n *nodeId) id() string {
 
 type node struct {
 	nodeId
+	calls []nodeId
 }
 
 func (m node) String() string {
@@ -312,7 +314,7 @@ func (mt nodeType) String() string {
 	return string(mt)
 }
 
-func nodeFromFullFilename(filename string) node {
+func nodeFromFullFilename(filename string) nodeId {
 	filename = strings.ToLower(filename)
 	var mt nodeType
 	switch {
@@ -334,5 +336,5 @@ func nodeFromFullFilename(filename string) node {
 		log.Panicf("can't create node for filename : %s\n", filename)
 	}
 	name := filename[0 : len(filename)-8]
-	return newNode(name, mt)
+	return nodeId{name, mt}
 }
