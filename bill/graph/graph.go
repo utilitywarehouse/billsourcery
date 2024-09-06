@@ -10,56 +10,34 @@ import (
 )
 
 func PublicProcs(sourceRoot string) error {
+	return listNodeType(sourceRoot, ntPubProc)
+}
+
+func Methods(sourceRoot string) error {
+	return listNodeType(sourceRoot, ntMethod)
+}
+
+func Forms(sourceRoot string) error {
+	return listNodeType(sourceRoot, ntForm)
+}
+
+func Reports(sourceRoot string) error {
+	return listNodeType(sourceRoot, ntReport)
+}
+
+func listNodeType(sourceRoot string, nodeType nodeType) error {
 	calls := newCalls()
 	if err := walkSource(sourceRoot, calls); err != nil {
 		return err
 	}
 	sort.Slice(calls.nodes, func(i, j int) bool { return calls.nodes[i].nodeName < calls.nodes[j].nodeName })
-	for _, procedure := range calls.nodes {
-		if procedure.nodeType == ntPubProc {
-			fmt.Println(procedure)
+	for _, node := range calls.nodes {
+		if node.nodeType == nodeType {
+			fmt.Println(node)
 		}
 	}
 	return nil
-}
 
-func Methods(sourceRoot string) error {
-	calls := newCalls()
-	if err := walkSource(sourceRoot, calls); err != nil {
-		return err
-	}
-	for _, method := range calls.nodes {
-		if method.nodeType == ntMethod {
-			fmt.Println(method)
-		}
-	}
-	return nil
-}
-
-func Forms(sourceRoot string) error {
-	calls := newCalls()
-	if err := walkSource(sourceRoot, calls); err != nil {
-		return err
-	}
-	for _, form := range calls.nodes {
-		if form.nodeType == ntForm {
-			fmt.Println(form)
-		}
-	}
-	return nil
-}
-
-func Reports(sourceRoot string) error {
-	calls := newCalls()
-	if err := walkSource(sourceRoot, calls); err != nil {
-		return err
-	}
-	for _, report := range calls.nodes {
-		if report.nodeType == ntReport {
-			fmt.Println(report)
-		}
-	}
-	return nil
 }
 
 func CallsNeo(sourceRoot string) error {
