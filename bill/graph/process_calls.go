@@ -17,13 +17,13 @@ import (
 
 func newCalls() *calls {
 	return &calls{
-		nodes: make(map[string]*node),
+		nodes: make(map[nodeId]*node),
 		calls: make(map[nodeId]([]nodeId)),
 	}
 }
 
 type calls struct {
-	nodes map[string]*node
+	nodes map[nodeId]*node
 	calls map[nodeId]([]nodeId)
 }
 
@@ -52,7 +52,7 @@ func (c *calls) writeGraph(output graphOutput) error {
 		toModules := c.calls[fromModule.nodeId]
 
 		for _, toModule := range toModules {
-			_, ok := c.nodes[toModule.id()]
+			_, ok := c.nodes[toModule]
 			if !ok {
 				missingMethods[toModule] = struct{}{}
 			}
@@ -87,7 +87,7 @@ func (c *calls) process(path string) error {
 		strings.HasSuffix(dir, "/Methods/") ||
 		strings.HasSuffix(dir, "/Reports/") {
 		node := nodeFromFullFilename(file)
-		c.nodes[node.id()] = &node
+		c.nodes[node.nodeId] = &node
 	}
 
 	if !strings.HasSuffix(dir, "/Procedures/") {
@@ -240,7 +240,7 @@ loop:
 	for _, s := range stmts {
 		if s.tokens[0].tok == equilex.Public && s.tokens[1].tok == equilex.WS && s.tokens[2].tok == equilex.Procedure && s.tokens[3].tok == equilex.WS {
 			node := newNode(s.tokens[4].lit, ntPubProc)
-			c.nodes[node.id()] = &node
+			c.nodes[node.nodeId] = &node
 		} else {
 			log.Printf("skipping procedure %v\n", s)
 		}
