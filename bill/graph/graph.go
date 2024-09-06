@@ -14,9 +14,11 @@ func PublicProcs(sourceRoot string) error {
 	if err := walkSource(sourceRoot, calls); err != nil {
 		return err
 	}
-	sort.Slice(calls.procs, func(i, j int) bool { return calls.procs[i].nodeName < calls.procs[j].nodeName })
-	for _, procedure := range calls.procs {
-		fmt.Println(procedure)
+	sort.Slice(calls.nodes, func(i, j int) bool { return calls.nodes[i].nodeName < calls.nodes[j].nodeName })
+	for _, procedure := range calls.nodes {
+		if procedure.nodeType == ntPubProc {
+			fmt.Println(procedure)
+		}
 	}
 	return nil
 }
@@ -26,8 +28,10 @@ func Methods(sourceRoot string) error {
 	if err := walkSource(sourceRoot, calls); err != nil {
 		return err
 	}
-	for _, method := range calls.methods {
-		fmt.Println(method)
+	for _, method := range calls.nodes {
+		if method.nodeType == ntMethod {
+			fmt.Println(method)
+		}
 	}
 	return nil
 }
@@ -37,8 +41,10 @@ func Forms(sourceRoot string) error {
 	if err := walkSource(sourceRoot, calls); err != nil {
 		return err
 	}
-	for _, form := range calls.forms {
-		fmt.Println(form)
+	for _, form := range calls.nodes {
+		if form.nodeType == ntForm {
+			fmt.Println(form)
+		}
 	}
 	return nil
 }
@@ -48,8 +54,10 @@ func Reports(sourceRoot string) error {
 	if err := walkSource(sourceRoot, calls); err != nil {
 		return err
 	}
-	for _, report := range calls.reports {
-		fmt.Println(report)
+	for _, report := range calls.nodes {
+		if report.nodeType == ntReport {
+			fmt.Println(report)
+		}
 	}
 	return nil
 }
@@ -78,7 +86,7 @@ func CalledMissingMethods(sourceRoot string) error {
 
 	for fromModule, toModules := range calls.calls {
 		for _, toModule := range toModules {
-			if !slices.Contains(calls.methods, *toModule) {
+			if !slices.Contains(calls.nodes, *toModule) {
 				fmt.Printf("%s calls missing method %s\n", fromModule, toModule)
 			}
 		}

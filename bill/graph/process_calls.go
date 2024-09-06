@@ -23,11 +23,8 @@ func newCalls() *calls {
 }
 
 type calls struct {
-	forms   []node
-	methods []node
-	reports []node
-	procs   []node
-	calls   map[node]([]*node)
+	nodes []node
+	calls map[node]([]*node)
 }
 
 func (c *calls) writeGraph(output graphOutput) error {
@@ -35,31 +32,12 @@ func (c *calls) writeGraph(output graphOutput) error {
 		return err
 	}
 
-	sort.Slice(c.procs, func(i, j int) bool { return c.procs[i].nodeName < c.procs[j].nodeName })
+	sort.Slice(c.nodes, func(i, j int) bool { return c.nodes[i].nodeName < c.nodes[j].nodeName })
 
-	for _, m := range c.methods {
+	for _, m := range c.nodes {
 		id := encodeID(&m)
 
 		if err := output.AddNode(id, m.nodeName, []string{m.nodeType.String()}); err != nil {
-			return err
-		}
-	}
-	for _, f := range c.forms {
-		id := encodeID(&f)
-		if err := output.AddNode(id, f.nodeName, []string{f.nodeType.String()}); err != nil {
-			return err
-		}
-	}
-	for _, r := range c.reports {
-		id := encodeID(&r)
-		if err := output.AddNode(id, r.nodeName, []string{r.nodeType.String()}); err != nil {
-			return err
-		}
-	}
-
-	for _, s := range c.procs {
-		id := encodeID(&s)
-		if err := output.AddNode(id, s.nodeName, []string{s.nodeType.String()}); err != nil {
 			return err
 		}
 	}
@@ -76,7 +54,7 @@ func (c *calls) writeGraph(output graphOutput) error {
 		toModules := c.calls[fromModule]
 
 		for _, toModule := range toModules {
-			if !slices.Contains(c.methods, *toModule) {
+			if !slices.Contains(c.nodes, *toModule) {
 				missingMethods[*toModule] = struct{}{}
 			}
 
@@ -109,11 +87,11 @@ func (c *calls) writeGraph(output graphOutput) error {
 func (c *calls) process(path string) error {
 	dir, file := filepath.Split(path)
 	if strings.HasSuffix(dir, "/Forms/") {
-		c.forms = append(c.forms, nodeFromFullFilename(file))
+		c.nodes = append(c.nodes, nodeFromFullFilename(file))
 	} else if strings.HasSuffix(dir, "/Methods/") {
-		c.methods = append(c.methods, nodeFromFullFilename(file))
+		c.nodes = append(c.nodes, nodeFromFullFilename(file))
 	} else if strings.HasSuffix(dir, "/Reports/") {
-		c.reports = append(c.reports, nodeFromFullFilename(file))
+		c.nodes = append(c.nodes, nodeFromFullFilename(file))
 	}
 
 	if !strings.HasSuffix(dir, "/Procedures/") {
@@ -265,7 +243,7 @@ loop:
 
 	for _, s := range stmts {
 		if s.tokens[0].tok == equilex.Public && s.tokens[1].tok == equilex.WS && s.tokens[2].tok == equilex.Procedure && s.tokens[3].tok == equilex.WS {
-			c.procs = append(c.procs, node{s.tokens[4].lit, ntPubProc})
+			c.nodes = append(c.nodes, node{s.tokens[4].lit, ntPubProc})
 		} else {
 			log.Printf("skipping procedure %v\n", s)
 		}
