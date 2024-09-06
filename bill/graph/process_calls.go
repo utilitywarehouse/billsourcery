@@ -18,13 +18,13 @@ import (
 func newCalls() *calls {
 	return &calls{
 		nodes: make(map[string]*node),
-		calls: make(map[node]([]*node)),
+		calls: make(map[nodeId]([]nodeId)),
 	}
 }
 
 type calls struct {
 	nodes map[string]*node
-	calls map[node]([]*node)
+	calls map[nodeId]([]nodeId)
 }
 
 func (c *calls) writeGraph(output graphOutput) error {
@@ -46,15 +46,15 @@ func (c *calls) writeGraph(output graphOutput) error {
 		}
 	}
 
-	missingMethods := make(map[node]struct{})
+	missingMethods := make(map[nodeId]struct{})
 
 	for _, fromModule := range allNodes {
-		toModules := c.calls[*fromModule]
+		toModules := c.calls[fromModule.nodeId]
 
 		for _, toModule := range toModules {
 			_, ok := c.nodes[toModule.id()]
 			if !ok {
-				missingMethods[*toModule] = struct{}{}
+				missingMethods[toModule] = struct{}{}
 			}
 
 			if err := output.AddCall(sanitiseId(fromModule.id()), sanitiseId(toModule.id())); err != nil {
@@ -63,7 +63,7 @@ func (c *calls) writeGraph(output graphOutput) error {
 		}
 	}
 
-	missingSorted := make([]node, 0, len(missingMethods))
+	missingSorted := make([]nodeId, 0, len(missingMethods))
 	for missing := range missingMethods {
 		missingSorted = append(missingSorted, missing)
 	}
@@ -183,9 +183,9 @@ loop:
 				to = to[1 : len(to)-1]
 				to = strings.TrimSuffix(to, ".jcl")
 
-				to_mod := node{to, ntMethod}
+				to_mod := nodeId{to, ntMethod}
 
-				c.calls[fromModule] = append(c.calls[fromModule], &to_mod)
+				c.calls[fromModule.nodeId] = append(c.calls[fromModule.nodeId], to_mod)
 
 			} else {
 				log.Printf("call from %s to variable method '%s' - skipping", fromModule, to)
@@ -239,7 +239,7 @@ loop:
 
 	for _, s := range stmts {
 		if s.tokens[0].tok == equilex.Public && s.tokens[1].tok == equilex.WS && s.tokens[2].tok == equilex.Procedure && s.tokens[3].tok == equilex.WS {
-			node := node{s.tokens[4].lit, ntPubProc}
+			node := newNode(s.tokens[4].lit, ntPubProc)
 			c.nodes[node.id()] = &node
 		} else {
 			log.Printf("skipping procedure %v\n", s)
@@ -270,17 +270,29 @@ func filename(path string) string {
 	return file
 }
 
-type node struct {
+type nodeId struct {
 	Name string
 	Type nodeType
+}
+
+func (n *nodeId) id() string {
+	return n.Name + "_" + n.Type.String()
+}
+
+type node struct {
+	nodeId
 }
 
 func (m node) String() string {
 	return m.Name
 }
 
-func (n node) id() string {
-	return n.Name + "_" + n.Type.String()
+func newNode(name string, type_ nodeType) node {
+	return node{
+		nodeId: nodeId{
+			Name: name,
+			Type: type_,
+		}}
 }
 
 type nodeType string
@@ -322,5 +334,5 @@ func nodeFromFullFilename(filename string) node {
 		log.Panicf("can't create node for filename : %s\n", filename)
 	}
 	name := filename[0 : len(filename)-8]
-	return node{name, mt}
+	return newNode(name, mt)
 }
