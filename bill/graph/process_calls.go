@@ -83,6 +83,8 @@ func (c *calls) process(path string) error {
 	dir, file := filepath.Split(path)
 	if strings.HasSuffix(dir, "/Forms/") ||
 		strings.HasSuffix(dir, "/Methods/") ||
+		strings.HasSuffix(dir, "/Exports/") ||
+		strings.HasSuffix(dir, "/Imports/") ||
 		strings.HasSuffix(dir, "/Reports/") {
 		name, type_ := nodeFromFullFilename(file)
 		node := newNode(name, type_)
