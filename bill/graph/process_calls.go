@@ -187,7 +187,7 @@ func (cb *calls) process(path string) error {
 				return fmt.Errorf("expected XTX prefix, but got %s in file %s", strings.TrimSpace(s), node.Name)
 			}
 
-			if node.nodeId.Type != "public_procedure_library" { // Hack. Skip ppl for now because we can't do it properly
+			if node.nodeId.Type != ntPpl { // Hack. Skip ppl for now because we can't do it properly
 				// Find method calls in text
 				refs, err := findMethodRefs(node.nodeId, text)
 				if err != nil {
@@ -228,7 +228,7 @@ func (cb *calls) process(path string) error {
 			if ppd != "" {
 				cb.nodes[node.nodeId] = node
 			} else {
-				if node.Type != "public_procedure_library" {
+				if node.Type != ntPpl {
 					log.Fatalf("found public procedure definitions outside of a public procedure library: %s, %s", name, node.Type)
 				}
 
