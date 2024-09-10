@@ -342,8 +342,8 @@ const (
 	ntForm    nodeType = "form"
 	ntImport  nodeType = "import"
 	ntMethod  nodeType = "method"
-	ntPubProc nodeType = "public_procedure"
 	ntProcess nodeType = "process"
+	ntPubProc nodeType = "public_procedure"
 	ntQuery   nodeType = "query"
 	ntReport  nodeType = "report"
 )
