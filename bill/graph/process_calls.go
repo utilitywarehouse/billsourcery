@@ -101,16 +101,9 @@ func (c *calls) process(path string) error {
 	return nil
 }
 
-// TODO: this doesn't currently handle calls from procedures to methods.
-func (c *calls) processMethodCalls(path string) error {
+func findMethodRefs(fromNodeId nodeId, text string) ([]string, error) {
 
-	f, err := os.Open(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	l := equilex.NewLexer(transform.NewReader(f, charmap.Windows1252.NewDecoder()))
+	l := equilex.NewLexer(transform.NewReader(strings.NewReader(text), charmap.Windows1252.NewDecoder()))
 
 	stmts := make([]*statement, 0)
 
@@ -120,7 +113,7 @@ loop:
 	for {
 		tok, lit, err := l.Scan()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		switch tok {
@@ -144,8 +137,7 @@ loop:
 		}
 	}
 
-	fromNodeId := nodeFromFullFilename(filename(path))
-	fromNode := c.nodes[fromNodeId]
+	var methodsRefs []string
 
 	for _, stmt := range stmts {
 		toks := stmt.tokens
@@ -184,16 +176,47 @@ loop:
 				to = to[1 : len(to)-1]
 				to = strings.TrimSuffix(to, ".jcl")
 
-				fromNode.addMethodRef(to)
+				methodsRefs = append(methodsRefs, to)
 			} else {
-				log.Printf("call from %s to variable method '%s' - skipping", fromNode.Name, to)
+				log.Printf("call from %s to variable method '%s' - skipping", fromNodeId.Name, to)
 			}
 		default:
 			for i, t := range toks {
 				log.Printf("tok %d is %v\n", i, t.lit)
 			}
-			return fmt.Errorf("unhandled type : '%#v' for statement %v", (toks[2].lit), stmt)
+			return nil, fmt.Errorf("unhandled type : '%#v' for statement %v", (toks[2].lit), stmt)
 		}
+	}
+
+	return methodsRefs, nil
+
+}
+
+// TODO: this doesn't currently handle calls from procedures to methods.
+func (c *calls) processMethodCalls(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	text := string(data)
+
+	fromNodeId := nodeFromFullFilename(filename(path))
+	fromNode := c.nodes[fromNodeId]
+
+	refs, err := findMethodRefs(fromNodeId, text)
+	if err != nil {
+		return err
+	}
+
+	for _, ref := range refs {
+		fromNode.addMethodRef(ref)
 	}
 
 	return nil
