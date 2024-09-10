@@ -49,7 +49,7 @@ func (c *calls) writeGraph(output graphOutput) error {
 	for _, fromModule := range allNodes {
 		toModules := fromModule.Refs
 
-		for _, toModule := range toModules {
+		for toModule := range toModules {
 			_, ok := c.nodes[toModule]
 			if !ok {
 				missingMethods[toModule] = struct{}{}
@@ -186,8 +186,7 @@ loop:
 
 				to_mod := nodeId{to, ntMethod}
 
-				fromNode.Refs = append(fromNode.Refs, to_mod)
-
+				fromNode.Refs[to_mod] = struct{}{}
 			} else {
 				log.Printf("call from %s to variable method '%s' - skipping", fromNode.Name, to)
 			}
@@ -282,7 +281,7 @@ func (n *nodeId) id() string {
 
 type node struct {
 	nodeId
-	Refs []nodeId
+	Refs map[nodeId]struct{}
 }
 
 func (m node) String() string {
@@ -294,7 +293,9 @@ func newNode(name string, type_ nodeType) node {
 		nodeId: nodeId{
 			Name: name,
 			Type: type_,
-		}}
+		},
+		Refs: make(map[nodeId]struct{}),
+	}
 }
 
 type nodeType string
