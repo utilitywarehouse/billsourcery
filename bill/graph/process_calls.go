@@ -432,23 +432,23 @@ func (r *node) addText(t string) {
 }
 
 func (r *node) addFieldRef(name string) {
-	r.Refs[nodeId{Type: ntField, Name: name}] = struct{}{}
+	r.Refs[newNodeId(name, ntField)] = struct{}{}
 }
 
 func (r *node) addIndexRef(name string) {
-	r.Refs[nodeId{Type: ntIndex, Name: name}] = struct{}{}
+	r.Refs[newNodeId(name, ntIndex)] = struct{}{}
 }
 
 func (r *node) addWrkRef(name string) {
-	r.Refs[nodeId{Type: ntWorkArea, Name: name}] = struct{}{}
+	r.Refs[newNodeId(name, ntWorkArea)] = struct{}{}
 }
 
 func (r *node) addSubtableRef(name string) {
-	r.Refs[nodeId{Type: ntTable, Name: name}] = struct{}{}
+	r.Refs[newNodeId(name, ntTable)] = struct{}{}
 }
 
 func (r *node) addPublicProcedureRef(name string) {
-	r.Refs[nodeId{Type: ntPubProc, Name: name}] = struct{}{}
+	r.Refs[newNodeId(name, ntPubProc)] = struct{}{}
 }
 
 func (r *node) refsSorted() []nodeId {
