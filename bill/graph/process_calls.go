@@ -27,16 +27,23 @@ type calls struct {
 	nodes map[nodeId]*node
 }
 
+func (c *calls) nodesSorted() []*node {
+	allNodes := make([]*node, 0, len(c.nodes))
+	for _, node := range c.nodes {
+		allNodes = append(allNodes, node)
+	}
+	sort.Slice(allNodes, func(i, j int) bool {
+		return (allNodes[i].Label + "_" + allNodes[i].nodeId.id()) < (allNodes[j].Label + "_" + allNodes[j].nodeId.id())
+	})
+	return allNodes
+}
+
 func (c *calls) writeGraph(output graphOutput) error {
 	if err := output.Start(); err != nil {
 		return err
 	}
 
-	var allNodes []*node
-	for _, node := range c.nodes {
-		allNodes = append(allNodes, node)
-	}
-	sort.Slice(allNodes, func(i, j int) bool { return allNodes[i].Label < allNodes[j].Label })
+	allNodes := c.nodesSorted()
 
 	for _, n := range allNodes {
 		id := sanitiseId(n.id())
@@ -49,9 +56,7 @@ func (c *calls) writeGraph(output graphOutput) error {
 	missingMethods := make(map[nodeId]struct{})
 
 	for _, fromModule := range allNodes {
-		toModules := fromModule.Refs
-
-		for toModule := range toModules {
+		for _, toModule := range fromModule.refsSorted() {
 			if toModule.Type == ntMethod {
 				_, ok := c.nodes[toModule]
 				if !ok {
@@ -444,6 +449,17 @@ func (r *node) addSubtableRef(name string) {
 
 func (r *node) addPublicProcedureRef(name string) {
 	r.Refs[nodeId{Type: ntPubProc, Name: name}] = struct{}{}
+}
+
+func (r *node) refsSorted() []nodeId {
+	nodes := make([]nodeId, 0, len(r.Refs))
+	for k := range r.Refs {
+		nodes = append(nodes, k)
+	}
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].id() < nodes[j].id()
+	})
+	return nodes
 }
 
 type nodeType string

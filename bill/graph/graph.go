@@ -66,8 +66,8 @@ func CalledMissingMethods(sourceRoot string) error {
 		return err
 	}
 
-	for _, fromModule := range calls.nodes {
-		for toModule := range fromModule.Refs {
+	for _, fromModule := range calls.nodesSorted() {
+		for _, toModule := range fromModule.refsSorted() {
 			if toModule.Type == ntMethod {
 				_, ok := calls.nodes[toModule]
 				if !ok {
