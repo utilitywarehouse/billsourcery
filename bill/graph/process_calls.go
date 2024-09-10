@@ -34,12 +34,12 @@ func (c *calls) writeGraph(output graphOutput) error {
 	for _, node := range c.nodes {
 		allNodes = append(allNodes, node)
 	}
-	sort.Slice(allNodes, func(i, j int) bool { return allNodes[i].Name < allNodes[j].Name })
+	sort.Slice(allNodes, func(i, j int) bool { return allNodes[i].Label < allNodes[j].Label })
 
 	for _, n := range allNodes {
 		id := sanitiseId(n.id())
 
-		if err := output.AddNode(id, n.Name, []string{n.Type.String()}); err != nil {
+		if err := output.AddNode(id, n.Label, []string{n.Type.String()}); err != nil {
 			return err
 		}
 	}
@@ -84,9 +84,9 @@ func (c *calls) process(path string) error {
 	if strings.HasSuffix(dir, "/Forms/") ||
 		strings.HasSuffix(dir, "/Methods/") ||
 		strings.HasSuffix(dir, "/Reports/") {
-		nodeId := nodeFromFullFilename(file)
-		node := newNode(nodeId.Name, nodeId.Type)
-		c.nodes[nodeId] = &node
+		name, type_ := nodeFromFullFilename(file)
+		node := newNode(name, type_)
+		c.nodes[node.nodeId] = &node
 	}
 
 	if !strings.HasSuffix(dir, "/Procedures/") {
@@ -207,7 +207,8 @@ func (c *calls) processMethodCalls(path string) error {
 
 	text := string(data)
 
-	fromNodeId := nodeFromFullFilename(filename(path))
+	name, type_ := nodeFromFullFilename(filename(path))
+	fromNodeId := newNodeId(name, type_)
 	fromNode := c.nodes[fromNodeId]
 
 	refs, err := findMethodRefs(fromNodeId, text)
@@ -296,13 +297,21 @@ type nodeId struct {
 	Type nodeType
 }
 
+func newNodeId(name string, type_ nodeType) nodeId {
+	return nodeId{
+		Name: strings.ToLower(name),
+		Type: type_,
+	}
+}
+
 func (n *nodeId) id() string {
 	return n.Name + "_" + n.Type.String()
 }
 
 type node struct {
 	nodeId
-	Refs map[nodeId]struct{}
+	Label string
+	Refs  map[nodeId]struct{}
 }
 
 func (m node) String() string {
@@ -315,11 +324,9 @@ func (r *node) addMethodRef(name string) {
 
 func newNode(name string, type_ nodeType) node {
 	return node{
-		nodeId: nodeId{
-			Name: name,
-			Type: type_,
-		},
-		Refs: make(map[nodeId]struct{}),
+		nodeId: newNodeId(name, type_),
+		Label:  name,
+		Refs:   make(map[nodeId]struct{}),
 	}
 }
 
@@ -340,27 +347,27 @@ func (mt nodeType) String() string {
 	return string(mt)
 }
 
-func nodeFromFullFilename(filename string) nodeId {
-	filename = strings.ToLower(filename)
+func nodeFromFullFilename(filename string) (string, nodeType) {
+	filenameLower := strings.ToLower(filename)
 	var mt nodeType
 	switch {
-	case strings.HasSuffix(filename, ".ex@.txt"):
+	case strings.HasSuffix(filenameLower, ".ex@.txt"):
 		mt = ntExport
-	case strings.HasSuffix(filename, ".fr@.txt"):
+	case strings.HasSuffix(filenameLower, ".fr@.txt"):
 		mt = ntForm
-	case strings.HasSuffix(filename, ".im@.txt"):
+	case strings.HasSuffix(filenameLower, ".im@.txt"):
 		mt = ntImport
-	case strings.HasSuffix(filename, ".jc@.txt"):
+	case strings.HasSuffix(filenameLower, ".jc@.txt"):
 		mt = ntMethod
-	case strings.HasSuffix(filename, ".pr@.txt"):
+	case strings.HasSuffix(filenameLower, ".pr@.txt"):
 		mt = ntProcess
-	case strings.HasSuffix(filename, ".qr@.txt"):
+	case strings.HasSuffix(filenameLower, ".qr@.txt"):
 		mt = ntQuery
-	case strings.HasSuffix(filename, ".re@.txt"):
+	case strings.HasSuffix(filenameLower, ".re@.txt"):
 		mt = ntReport
 	default:
-		log.Panicf("can't create node for filename : %s\n", filename)
+		log.Panicf("can't create node for filename : %s\n", filenameLower)
 	}
 	name := filename[0 : len(filename)-8]
-	return nodeId{name, mt}
+	return name, mt
 }

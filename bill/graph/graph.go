@@ -34,7 +34,7 @@ func listNodeType(sourceRoot string, nodeType nodeType) error {
 	for _, node := range calls.nodes {
 		allNodes = append(allNodes, node)
 	}
-	sort.Slice(allNodes, func(i, j int) bool { return allNodes[i].Name < allNodes[j].Name })
+	sort.Slice(allNodes, func(i, j int) bool { return allNodes[i].Label < allNodes[j].Label })
 
 	for _, node := range allNodes {
 		if node.Type == nodeType {
