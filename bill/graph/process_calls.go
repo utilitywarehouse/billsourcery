@@ -184,9 +184,7 @@ loop:
 				to = to[1 : len(to)-1]
 				to = strings.TrimSuffix(to, ".jcl")
 
-				to_mod := nodeId{to, ntMethod}
-
-				fromNode.Refs[to_mod] = struct{}{}
+				fromNode.addMethodRef(to)
 			} else {
 				log.Printf("call from %s to variable method '%s' - skipping", fromNode.Name, to)
 			}
@@ -286,6 +284,10 @@ type node struct {
 
 func (m node) String() string {
 	return m.Name
+}
+
+func (r *node) addMethodRef(name string) {
+	r.Refs[nodeId{Type: ntMethod, Name: name}] = struct{}{}
 }
 
 func newNode(name string, type_ nodeType) node {
