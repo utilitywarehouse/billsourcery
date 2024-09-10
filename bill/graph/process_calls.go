@@ -50,13 +50,15 @@ func (c *calls) writeGraph(output graphOutput) error {
 		toModules := fromModule.Refs
 
 		for toModule := range toModules {
-			_, ok := c.nodes[toModule]
-			if !ok {
-				missingMethods[toModule] = struct{}{}
-			}
+			if toModule.Type == ntMethod {
+				_, ok := c.nodes[toModule]
+				if !ok {
+					missingMethods[toModule] = struct{}{}
+				}
 
-			if err := output.AddCall(sanitiseId(fromModule.id()), sanitiseId(toModule.id())); err != nil {
-				return err
+				if err := output.AddCall(sanitiseId(fromModule.id()), sanitiseId(toModule.id())); err != nil {
+					return err
+				}
 			}
 		}
 	}
