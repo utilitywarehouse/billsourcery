@@ -321,7 +321,7 @@ func (m node) String() string {
 }
 
 func (r *node) addMethodRef(name string) {
-	r.Refs[nodeId{Type: ntMethod, Name: name}] = struct{}{}
+	r.Refs[newNodeId(name, ntMethod)] = struct{}{}
 }
 
 func newNode(name string, type_ nodeType) node {
