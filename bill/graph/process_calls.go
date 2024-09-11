@@ -77,7 +77,7 @@ func (c *calls) writeGraph(output graphOutput) error {
 	sort.Slice(missingSorted, func(i int, j int) bool { return missingSorted[i].Name < missingSorted[j].Name })
 
 	for _, n := range missingSorted {
-		if err := output.AddNode(sanitiseId(n.id()), n.Name, []string{"method", "missing"}); err != nil {
+		if err := output.AddNode(sanitiseId(n.id()), n.Name, []string{n.Type.String(), "missing"}); err != nil {
 			return err
 		}
 	}
