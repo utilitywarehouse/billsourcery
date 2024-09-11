@@ -66,16 +66,16 @@ func (o NeoGraphOutput) AddNode(id string, name string, tags []string) error {
 	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, name)
 
 	if slices.Contains(tags, "form") {
-		fmt.Printf("SET %s :Form ;\n", id)
+		fmt.Printf("SET %s :Form;\n", id)
 	} else if slices.Contains(tags, "report") {
-		fmt.Printf("SET %s :Report ;\n", id)
+		fmt.Printf("SET %s :Report;\n", id)
 	} else if slices.Contains(tags, "public_procedure") {
-		fmt.Printf("SET %s :PublicProcedure ;\n", id)
+		fmt.Printf("SET %s :PublicProcedure;\n", id)
 	} else if slices.Contains(tags, "method") {
 		if slices.Contains(tags, "missing") {
-			fmt.Printf("SET %s :Method \nSET %s : Missing;\n", id, id)
+			fmt.Printf("SET %s :Method \nSET %s :Missing;\n", id, id)
 		} else {
-			fmt.Printf("SET %s :Method ;\n", id)
+			fmt.Printf("SET %s :Method;\n", id)
 		}
 	}
 
