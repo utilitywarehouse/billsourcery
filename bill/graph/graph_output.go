@@ -71,6 +71,8 @@ func (o NeoGraphOutput) AddNode(id string, name string, tags []string) error {
 		fmt.Printf("SET %s :Report;\n", id)
 	} else if slices.Contains(tags, "export") {
 		fmt.Printf("SET %s :Export;\n", id)
+	} else if slices.Contains(tags, "import") {
+		fmt.Printf("SET %s :Import;\n", id)
 	} else if slices.Contains(tags, "public_procedure") {
 		fmt.Printf("SET %s :PublicProcedure;\n", id)
 	} else if slices.Contains(tags, "method") {
