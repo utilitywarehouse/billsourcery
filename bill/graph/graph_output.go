@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+
+	"github.com/iancoleman/strcase"
 )
 
 type graphOutput interface {
@@ -69,35 +71,11 @@ func (o NeoGraphOutput) AddNode(id string, name string, tags []string) error {
 	var tagString strings.Builder
 
 	for _, tag := range tags {
-		next := ""
-		switch tag {
-		case "form":
-			next = "Form"
-		case "report":
-			next = "Report"
-		case "public_procedure":
-			next = "PublicProcedure"
-		case "method":
-			next = "Method"
-		case "export":
-			next = "Export"
-		case "import":
-			next = "Import"
-		case "query":
-			next = "Query"
-		case "missing":
-			next = "Missing"
+		next := strcase.ToCamel(tag)
+		if tagString.Len() != 0 {
+			tagString.WriteByte('\n')
 		}
-		if next != "" {
-			if tagString.Len() != 0 {
-				tagString.WriteByte('\n')
-			}
-			fmt.Fprintf(&tagString, "SET %s :%s", id, next)
-		}
-	}
-
-	if tagString.Len() == 0 {
-		fmt.Fprintf(&tagString, "SET %s :UNKNOWN_TAG", id)
+		fmt.Fprintf(&tagString, "SET %s :%s", id, next)
 	}
 
 	tagString.WriteString(";\n")
