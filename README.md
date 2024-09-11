@@ -1,6 +1,6 @@
 # billsourcery
 
-Analyitics and statistics tool for Equinox source code.
+A tool for analysing the source code of Equinox applications.
 
 ## Requirements
 
