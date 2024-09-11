@@ -3,6 +3,7 @@ package graph
 import (
 	"fmt"
 	"slices"
+	"strings"
 )
 
 type graphOutput interface {
@@ -65,25 +66,42 @@ func (o NeoGraphOutput) AddNode(id string, name string, tags []string) error {
 
 	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, name)
 
-	if slices.Contains(tags, "form") {
-		fmt.Printf("SET %s :Form;\n", id)
-	} else if slices.Contains(tags, "report") {
-		fmt.Printf("SET %s :Report;\n", id)
-	} else if slices.Contains(tags, "export") {
-		fmt.Printf("SET %s :Export;\n", id)
-	} else if slices.Contains(tags, "import") {
-		fmt.Printf("SET %s :Import;\n", id)
-	} else if slices.Contains(tags, "query") {
-		fmt.Printf("SET %s :Query;\n", id)
-	} else if slices.Contains(tags, "public_procedure") {
-		fmt.Printf("SET %s :PublicProcedure;\n", id)
-	} else if slices.Contains(tags, "method") {
-		if slices.Contains(tags, "missing") {
-			fmt.Printf("SET %s :Method\nSET %s :Missing;\n", id, id)
-		} else {
-			fmt.Printf("SET %s :Method;\n", id)
+	var tagString strings.Builder
+
+	for _, tag := range tags {
+		next := ""
+		switch tag {
+		case "form":
+			next = "Form"
+		case "report":
+			next = "Report"
+		case "public_procedure":
+			next = "PublicProcedure"
+		case "method":
+			next = "Method"
+		case "export":
+			next = "Export"
+		case "import":
+			next = "Import"
+		case "query":
+			next = "Query"
+		case "missing":
+			next = "Missing"
+		}
+		if next != "" {
+			if tagString.Len() != 0 {
+				tagString.WriteByte('\n')
+			}
+			fmt.Fprintf(&tagString, "SET %s :%s", id, next)
 		}
 	}
+
+	if tagString.Len() == 0 {
+		fmt.Fprintf(&tagString, "SET %s :UNKNOWN_TAG", id)
+	}
+
+	tagString.WriteString(";\n")
+	fmt.Printf("%s", &tagString)
 
 	return nil
 }
