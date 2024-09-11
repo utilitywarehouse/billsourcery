@@ -77,15 +77,13 @@ func (c *calls) writeGraph(output graphOutput) error {
 
 	for _, fromModule := range allNodes {
 		for _, toModule := range fromModule.refsSorted() {
-			if toModule.Type == ntMethod {
-				_, ok := c.nodes[toModule]
-				if !ok {
-					missingRefs[toModule] = struct{}{}
-				}
+			_, ok := c.nodes[toModule]
+			if !ok {
+				missingRefs[toModule] = struct{}{}
+			}
 
-				if err := output.AddReference(sanitiseId(fromModule.id()), sanitiseId(toModule.id())); err != nil {
-					return err
-				}
+			if err := output.AddReference(sanitiseId(fromModule.id()), sanitiseId(toModule.id())); err != nil {
+				return err
 			}
 		}
 	}
