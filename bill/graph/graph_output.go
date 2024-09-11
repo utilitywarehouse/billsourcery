@@ -10,7 +10,7 @@ type graphOutput interface {
 	Start() error
 	End() error
 	AddNode(id string, name string, tags []string) error
-	AddCall(from_id string, to_id string) error
+	AddReference(from_id string, to_id string) error
 }
 
 type DotGraphOutput struct{}
@@ -47,7 +47,7 @@ func (o *DotGraphOutput) AddNode(id string, name string, tags []string) error {
 	return nil
 }
 
-func (o *DotGraphOutput) AddCall(from string, to string) error {
+func (o *DotGraphOutput) AddReference(from string, to string) error {
 	fmt.Printf("\t%s -> %s\n", from, to)
 	return nil
 }
@@ -106,7 +106,7 @@ func (o NeoGraphOutput) AddNode(id string, name string, tags []string) error {
 	return nil
 }
 
-func (o *NeoGraphOutput) AddCall(from string, to string) error {
-	fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:calls]->(t);\n", from, to)
+func (o *NeoGraphOutput) AddReference(from string, to string) error {
+	fmt.Printf("MERGE (f:Node {id: \"%s\"}) MERGE (t:Node {id: \"%s\"}) MERGE (f)-[:references]->(t);\n", from, to)
 	return nil
 }
