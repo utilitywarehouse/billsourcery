@@ -53,14 +53,14 @@ func (c *calls) writeGraph(output graphOutput) error {
 		}
 	}
 
-	missingMethods := make(map[nodeId]struct{})
+	missingRefs := make(map[nodeId]struct{})
 
 	for _, fromModule := range allNodes {
 		for _, toModule := range fromModule.refsSorted() {
 			if toModule.Type == ntMethod {
 				_, ok := c.nodes[toModule]
 				if !ok {
-					missingMethods[toModule] = struct{}{}
+					missingRefs[toModule] = struct{}{}
 				}
 
 				if err := output.AddCall(sanitiseId(fromModule.id()), sanitiseId(toModule.id())); err != nil {
@@ -70,8 +70,8 @@ func (c *calls) writeGraph(output graphOutput) error {
 		}
 	}
 
-	missingSorted := make([]nodeId, 0, len(missingMethods))
-	for missing := range missingMethods {
+	missingSorted := make([]nodeId, 0, len(missingRefs))
+	for missing := range missingRefs {
 		missingSorted = append(missingSorted, missing)
 	}
 	sort.Slice(missingSorted, func(i int, j int) bool { return missingSorted[i].Name < missingSorted[j].Name })
