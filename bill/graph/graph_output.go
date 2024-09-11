@@ -73,7 +73,7 @@ func (o NeoGraphOutput) AddNode(id string, name string, tags []string) error {
 		fmt.Printf("SET %s :PublicProcedure;\n", id)
 	} else if slices.Contains(tags, "method") {
 		if slices.Contains(tags, "missing") {
-			fmt.Printf("SET %s :Method \nSET %s :Missing;\n", id, id)
+			fmt.Printf("SET %s :Method\nSET %s :Missing;\n", id, id)
 		} else {
 			fmt.Printf("SET %s :Method;\n", id)
 		}
