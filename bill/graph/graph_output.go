@@ -66,20 +66,18 @@ func (o *NeoGraphOutput) End() error {
 
 func (o NeoGraphOutput) AddNode(id string, name string, tags []string) error {
 
-	fmt.Printf("MERGE (%s:Node {id:\"%s\", name:\"%s\"})\n", id, id, name)
+	fmt.Printf("MERGE (n:Node {id:\"%s\"}) SET n.name=\"%s\"\n", id, name)
 
 	var tagString strings.Builder
 
 	for _, tag := range tags {
 		next := strcase.ToCamel(tag)
-		if tagString.Len() != 0 {
-			tagString.WriteByte('\n')
-		}
-		fmt.Fprintf(&tagString, "SET %s :%s", id, next)
+		tagString.WriteByte(':')
+		tagString.WriteString(next)
+
 	}
 
-	tagString.WriteString(";\n")
-	fmt.Printf("%s", &tagString)
+	fmt.Printf("SET n %s;\n", tagString.String())
 
 	return nil
 }
