@@ -101,14 +101,14 @@ func (cb *calls) process(path string) error {
 	ppd := ""
 
 	for {
-		foo, err := br.Peek(4)
+		prefix, err := br.Peek(4)
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
 			return err
 		}
-		switch string(foo) {
+		switch string(prefix) {
 		case "FIL,":
 			s, _ := br.ReadString('\n')
 
@@ -272,7 +272,7 @@ func (cb *calls) process(path string) error {
 			//log.Println("implement OBC")
 			_, _ = br.ReadString('\n')
 		default:
-			fmt.Printf("foo: %s\n", foo)
+			fmt.Printf("foo: %s\n", prefix)
 		}
 	}
 
