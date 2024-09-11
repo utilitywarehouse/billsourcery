@@ -1,15 +1,14 @@
 # billsourcery
 
-Perform various operations on the Bill source code, mostly for analysical purposes.
+Analyitics and statistics tool for Equinox source code.
 
 ## Requirements
 
 * [Go](https://golang.org/)
-* [Mercurial](https://www.mercurial-scm.org/)
 
 ## Installation
 
-    go get github.com/utilitywarehouse/billsourcery
+    go install github.com/utilitywarehouse/billsourcery@latest
 
 ## Usage
 
@@ -60,23 +59,4 @@ Find examples containing the name "customer"
 Find methods that are not called from anywhere
 
     MATCH (m:Method) WHERE NOT (m)<-[:calls]-() RETURN m.name order by m.name
-
-### Progress report
-
-Reset repository and pull latest changes (if required)
-
-    $ cd /path/to/uw-bill-source-history
-    $ git reset --hard HEAD && git pull
-
-Strip comments from source files
-
-    $ billsourcery --source-root=$(pwd) strip-comments
-
-Save current status in report
-
-    $ git diff --stat | awk '{print $1 "," $3}' | egrep -e '^(F|P|R|I|M|E).*[0-9]$' > /tmp/report-$(date +%Y%m%d).csv
-
-List top 20 files by number of comments (top files to work on)
-
-    $ git diff --stat | sort -k3 -n -r | head -20
 
