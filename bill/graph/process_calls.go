@@ -27,6 +27,26 @@ type calls struct {
 	nodes map[nodeId]*node
 }
 
+func (c *calls) addNode(node *node) {
+	c.nodes[node.nodeId] = node
+
+	// Some referenced node types implicity exist even though we haven't
+	// "found" them anywhere, because they don't exist in the source code.
+	for referenced := range node.Refs {
+		if referenced.Type == ntTable || referenced.Type == ntField || referenced.Type == ntIndex || referenced.Type == ntWorkArea {
+			_, ok := c.nodes[referenced]
+			if !ok {
+				node := newNode()
+				node.nodeId = referenced
+				node.Label = referenced.Name
+				log.Printf("added implicit node %#v\n", node)
+				c.nodes[referenced] = node
+			}
+		}
+	}
+
+}
+
 func (c *calls) nodesSorted() []*node {
 	allNodes := make([]*node, 0, len(c.nodes))
 	for _, node := range c.nodes {
@@ -226,7 +246,7 @@ func (cb *calls) process(path string) error {
 			name := spl[0]
 
 			if ppd != "" {
-				cb.nodes[node.nodeId] = node
+				cb.addNode(node)
 			} else {
 				if node.Type != ntPpl {
 					log.Fatalf("found public procedure definitions outside of a public procedure library: %s, %s", name, node.Type)
@@ -277,7 +297,7 @@ func (cb *calls) process(path string) error {
 	}
 
 	if node.Type != ntPpl {
-		cb.nodes[node.nodeId] = node
+		cb.addNode(node)
 	}
 	return nil
 }
