@@ -16,6 +16,8 @@ A tool for analysing the source code of Equinox applications.
 
 ## Neo4j graph database
 
+If using the neo4j output from billsourcery, you may wish to install and use neo4j.
+
 ### Neo4J Installation
 
 Download and install [Neo4j](https://neo4j.com/)
