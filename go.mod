@@ -7,6 +7,7 @@ toolchain go1.22.5
 require (
 	cloud.google.com/go/bigquery v1.62.0
 	github.com/boltdb/bolt v1.3.1
+	github.com/iancoleman/strcase v0.3.0
 	github.com/lib/pq v1.10.9
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/urfave/cli/v2 v2.27.4
@@ -40,7 +41,6 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.3 // indirect
 	github.com/googleapis/gax-go/v2 v2.13.0 // indirect
-	github.com/iancoleman/strcase v0.3.0 // indirect
 	github.com/klauspost/compress v1.17.9 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
