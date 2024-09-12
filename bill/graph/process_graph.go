@@ -133,29 +133,7 @@ func (cb *graph) process(path string) error {
 
 			fullName := spl[0]
 
-			nameParts := strings.Split(fullName, ".")
-
-			node.Name = strings.ToLower(nameParts[0])
-			node.Label = nameParts[0]
-			switch strings.ToLower(nameParts[1]) {
-			case "jcl":
-				node.Type = ntMethod
-			case "imp":
-				node.Type = ntImport
-			case "exp":
-				node.Type = ntExport
-			case "frm":
-				node.Type = ntForm
-			case "qry":
-				node.Type = ntQuery
-			case "rep":
-				node.Type = ntReport
-			case "ppl":
-				node.Type = ntPpl
-			default:
-				node.Type = "UNKNOWN"
-			}
-
+			node.nodeId, node.Label = idAndLabelFromFullName(fullName)
 		case "GRP,":
 			_, _ = br.ReadString('\n')
 		case "FLD,":
@@ -296,6 +274,37 @@ func (cb *graph) process(path string) error {
 		cb.addNode(node)
 	}
 	return nil
+}
+
+func idAndLabelFromFullName(fullName string) (nodeId, string) {
+	var id nodeId
+	var label string
+
+	nameParts := strings.Split(fullName, ".")
+
+	id.Name = strings.ToLower(nameParts[0])
+	label = nameParts[0]
+
+	switch strings.ToLower(nameParts[1]) {
+	case "jcl":
+		id.Type = ntMethod
+	case "imp":
+		id.Type = ntImport
+	case "exp":
+		id.Type = ntExport
+	case "frm":
+		id.Type = ntForm
+	case "qry":
+		id.Type = ntQuery
+	case "rep":
+		id.Type = ntReport
+	case "ppl":
+		id.Type = ntPpl
+	default:
+		id.Type = "UNKNOWN"
+	}
+
+	return id, label
 }
 
 func findMethodRefs(fromNodeId nodeId, text string) ([]string, error) {

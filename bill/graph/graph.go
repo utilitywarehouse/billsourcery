@@ -61,7 +61,6 @@ func Graph(sourceRoot string, output string) error {
 		return err
 	}
 	return calls.writeGraph(graphOutput)
-
 }
 
 func CalledMissingMethods(sourceRoot string) error {
