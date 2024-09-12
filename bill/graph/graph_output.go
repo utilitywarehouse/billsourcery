@@ -65,8 +65,7 @@ func (o *NeoGraphOutput) End() error {
 }
 
 func (o NeoGraphOutput) AddNode(id string, name string, tags []string) error {
-
-	fmt.Printf("MERGE (n:Node {id:\"%s\"}) SET n.name=\"%s\"\n", id, name)
+	fmt.Printf("MERGE (n:Node {id:\"%s\"}) SET n.name=\"%s\" ", id, name)
 
 	var tagString strings.Builder
 
