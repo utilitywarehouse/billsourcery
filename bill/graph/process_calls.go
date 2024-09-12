@@ -9,7 +9,6 @@ import (
 	"sort"
 	"strconv"
 
-	//"net/url"
 	"strings"
 
 	"github.com/utilitywarehouse/equilex"
@@ -39,7 +38,6 @@ func (c *calls) addNode(node *node) {
 				node := newNode()
 				node.nodeId = referenced
 				node.Label = referenced.Name
-				log.Printf("added implicit node %#v\n", node)
 				c.nodes[referenced] = node
 			}
 		}
