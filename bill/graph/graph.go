@@ -25,7 +25,7 @@ func Reports(sourceRoot string) error {
 }
 
 func listNodeType(sourceRoot string, nodeType nodeType) error {
-	calls := newCalls()
+	calls := newGraph()
 	if err := walkSource(sourceRoot, calls); err != nil {
 		return err
 	}
@@ -44,24 +44,28 @@ func listNodeType(sourceRoot string, nodeType nodeType) error {
 	return nil
 }
 
-func CallsNeo(sourceRoot string) error {
-	calls := newCalls()
-	if err := walkSource(sourceRoot, calls); err != nil {
-		return err
-	}
-	return calls.writeGraph(&NeoGraphOutput{})
-}
+func Graph(sourceRoot string, output string) error {
 
-func CallsDot(sourceRoot string) error {
-	calls := newCalls()
+	var graphOutput graphOutput
+	switch output {
+	case "neo":
+		graphOutput = &NeoGraphOutput{}
+	case "dot":
+		graphOutput = &DotGraphOutput{}
+	default:
+		return fmt.Errorf("unknown graph output : '%s'", output)
+	}
+
+	calls := newGraph()
 	if err := walkSource(sourceRoot, calls); err != nil {
 		return err
 	}
-	return calls.writeGraph(&DotGraphOutput{})
+	return calls.writeGraph(graphOutput)
+
 }
 
 func CalledMissingMethods(sourceRoot string) error {
-	calls := newCalls()
+	calls := newGraph()
 	if err := walkSource(sourceRoot, calls); err != nil {
 		return err
 	}

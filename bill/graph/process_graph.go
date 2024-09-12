@@ -16,17 +16,17 @@ import (
 	"golang.org/x/text/transform"
 )
 
-func newCalls() *calls {
-	return &calls{
+func newGraph() *graph {
+	return &graph{
 		nodes: make(map[nodeId]*node),
 	}
 }
 
-type calls struct {
+type graph struct {
 	nodes map[nodeId]*node
 }
 
-func (c *calls) addNode(node *node) {
+func (c *graph) addNode(node *node) {
 	c.nodes[node.nodeId] = node
 
 	// Some referenced node types implicity exist even though we haven't
@@ -45,7 +45,7 @@ func (c *calls) addNode(node *node) {
 
 }
 
-func (c *calls) nodesSorted() []*node {
+func (c *graph) nodesSorted() []*node {
 	allNodes := make([]*node, 0, len(c.nodes))
 	for _, node := range c.nodes {
 		allNodes = append(allNodes, node)
@@ -56,7 +56,7 @@ func (c *calls) nodesSorted() []*node {
 	return allNodes
 }
 
-func (c *calls) writeGraph(output graphOutput) error {
+func (c *graph) writeGraph(output graphOutput) error {
 	if err := output.Start(); err != nil {
 		return err
 	}
@@ -104,7 +104,7 @@ func (c *calls) writeGraph(output graphOutput) error {
 	return nil
 }
 
-func (cb *calls) process(path string) error {
+func (cb *graph) process(path string) error {
 	f, err := os.Open(path)
 	if err != nil {
 		return err

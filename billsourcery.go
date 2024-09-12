@@ -161,17 +161,17 @@ func main() {
 				},
 			},
 			{
-				Name:  "calls-neo",
-				Usage: "Produce neo4j cypher statements to create bill call graph. (Procedures not supported properly yet)",
-				Action: func(ctx *cli.Context) error {
-					return graph.CallsNeo(ctx.String("source-root"))
+				Name:  "generate-graph",
+				Usage: "Generate a graph of nodes and references representing different aspects of the equinox application",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "output-type",
+						Value: "neo",
+						Usage: "Output type [neo|dot]",
+					},
 				},
-			},
-			{
-				Name:  "calls-dot",
-				Usage: "Produce a .dot file of calls",
 				Action: func(ctx *cli.Context) error {
-					return graph.CallsDot(ctx.String("source-root"))
+					return graph.Graph(ctx.String("source-root"), ctx.String("output-type"))
 				},
 			},
 			{
