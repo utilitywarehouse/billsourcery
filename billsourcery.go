@@ -169,9 +169,19 @@ func main() {
 						Value: "neo",
 						Usage: "Output type [neo|dot]",
 					},
+					&cli.StringFlag{
+						Name:  "modules-csv",
+						Value: "",
+						Usage: "Bill ModuleS table CSV file",
+					},
+					&cli.StringFlag{
+						Name:  "modudet-csv",
+						Value: "",
+						Usage: "Bill ModuDet table CSV file",
+					},
 				},
 				Action: func(ctx *cli.Context) error {
-					return graph.Graph(ctx.String("source-root"), ctx.String("output-type"))
+					return graph.Graph(ctx.String("source-root"), ctx.String("output-type"), ctx.String("modules-csv"), ctx.String("modudet-csv"))
 				},
 			},
 			{

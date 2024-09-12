@@ -2,12 +2,15 @@ package graph
 
 import (
 	"bufio"
+	"encoding/csv"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"sort"
 	"strconv"
+	"time"
 
 	"strings"
 
@@ -38,6 +41,7 @@ func (c *graph) addNode(node *node) {
 				node := newNode()
 				node.nodeId = referenced
 				node.Label = referenced.Name
+				node.Used = true
 				c.nodes[referenced] = node
 			}
 		}
@@ -66,7 +70,14 @@ func (c *graph) writeGraph(output graphOutput) error {
 	for _, n := range allNodes {
 		id := sanitiseId(n.id())
 
-		if err := output.AddNode(id, n.Label, []string{n.Type.String()}); err != nil {
+		var labels []string
+		if n.Used {
+			labels = []string{n.Type.String(), "used"}
+		} else {
+			labels = []string{n.Type.String()}
+		}
+
+		if err := output.AddNode(id, n.Label, labels); err != nil {
 			return err
 		}
 	}
@@ -307,6 +318,99 @@ func idAndLabelFromFullName(fullName string) (nodeId, string) {
 	return id, label
 }
 
+func (g *graph) applyModules(modulesCsv, modudetCsv string) error {
+	switch {
+	case modulesCsv == "" && modudetCsv == "":
+		return nil
+	case (modulesCsv == "" && modudetCsv != "") || (modudetCsv == "" && modulesCsv != ""):
+		return errors.New("module CSV files must both be provided")
+	}
+
+	modules, err := os.Open(modulesCsv)
+	if err != nil {
+		return fmt.Errorf("failed to open module file %s : %e", modulesCsv, err)
+	}
+	modulesReader := csv.NewReader(bufio.NewReader(modules))
+	modulesReader.ReuseRecord = true
+	modulesReader.TrimLeadingSpace = true
+
+	// Map of logic id to module name
+	modNames := make(map[string]string)
+
+	// skip header
+	_, _ = modulesReader.Read()
+
+	for {
+		rec, err := modulesReader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("error reading modules csv : %e", err)
+		}
+
+		modNames[rec[6]] = rec[0]
+	}
+
+	modudet, err := os.Open(modudetCsv)
+	if err != nil {
+		return fmt.Errorf("failed to open module file %s : %e", modulesCsv, err)
+	}
+	modudetReader := csv.NewReader(bufio.NewReader(modudet))
+	modudetReader.ReuseRecord = true
+	modudetReader.TrimLeadingSpace = true
+
+	since, err := time.Parse("2006-01-02", "2024-01-01")
+	if err != nil {
+		return err
+	}
+
+	usedModuleLogics := make(map[string]struct{})
+
+	// skip header
+	_, _ = modudetReader.Read()
+
+	for {
+		rec, err := modudetReader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("error reading modules csv : %e", err)
+		}
+
+		time, err := time.Parse("2006-01-02", rec[0])
+		if err != nil {
+			return fmt.Errorf("error parsing date '%s' from ModuDet CSV : %e", rec[0], err)
+		}
+		if !time.Before(since) {
+			usedModuleLogics[rec[13]] = struct{}{}
+		}
+	}
+
+	for logic := range usedModuleLogics {
+		name, ok := modNames[logic]
+		if !ok {
+			return fmt.Errorf("unknown module with logic id %s", logic)
+		}
+
+		// Some are truncated. Skip those.
+		if strings.Contains(name, ".") {
+			id, _ := idAndLabelFromFullName(name)
+			if id.Type != "UNKNOWN" {
+				n, ok := g.nodes[id]
+				if !ok {
+					log.Printf("failed to find node to mark as used : %#v", id)
+				} else {
+					n.Used = true
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 func findMethodRefs(fromNodeId nodeId, text string) ([]string, error) {
 
 	l := equilex.NewLexer(transform.NewReader(strings.NewReader(text), charmap.Windows1252.NewDecoder()))
@@ -433,6 +537,7 @@ func (n *nodeId) id() string {
 type node struct {
 	nodeId
 	Label string
+	Used  bool
 	Txt   []string `json:"-"`
 	Refs  map[nodeId]struct{}
 }

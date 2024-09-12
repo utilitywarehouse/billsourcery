@@ -44,7 +44,7 @@ func listNodeType(sourceRoot string, nodeType nodeType) error {
 	return nil
 }
 
-func Graph(sourceRoot string, output string) error {
+func Graph(sourceRoot string, output string, moduleCsv string, modudetCsv string) error {
 
 	var graphOutput graphOutput
 	switch output {
@@ -60,6 +60,9 @@ func Graph(sourceRoot string, output string) error {
 	if err := walkSource(sourceRoot, calls); err != nil {
 		return err
 	}
+
+	calls.applyModules(moduleCsv, modudetCsv)
+
 	return calls.writeGraph(graphOutput)
 }
 
