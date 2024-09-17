@@ -229,6 +229,10 @@ func (cb *graph) process(path string) error {
 			spl := strings.SplitN(s, ",", 2)
 
 			node.addPublicProcedureRef(spl[0])
+
+			// mark this procedure as used
+			cb.markPublicProcedureUsed(spl[0])
+
 		case "PPD,":
 			s, _ := br.ReadString('\n')
 
@@ -291,6 +295,11 @@ func (cb *graph) process(path string) error {
 		cb.addNode(node)
 	}
 	return nil
+}
+
+func (g *graph) markPublicProcedureUsed(name string) {
+	id := newNodeId(name, ntPubProc)
+	g.used[id] = struct{}{}
 }
 
 func idAndLabelFromFullName(fullName string) (nodeId, string) {
