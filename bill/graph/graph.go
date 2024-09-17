@@ -56,14 +56,14 @@ func Graph(sourceRoot string, output string, moduleCsv string, modudetCsv string
 		return fmt.Errorf("unknown graph output : '%s'", output)
 	}
 
-	calls := newGraph()
-	if err := walkSource(sourceRoot, calls); err != nil {
+	graph := newGraph()
+	if err := walkSource(sourceRoot, graph); err != nil {
 		return err
 	}
 
-	calls.applyModules(moduleCsv, modudetCsv)
+	graph.applyModules(moduleCsv, modudetCsv)
 
-	return calls.writeGraph(graphOutput)
+	return graph.writeGraph(graphOutput)
 }
 
 func CalledMissingMethods(sourceRoot string) error {
