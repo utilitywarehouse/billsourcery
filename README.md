@@ -29,7 +29,7 @@ For simple local use, disable authentication by setting `dbms.security.auth_enab
 This may take some time to import (e.g. 10 or 20 minutes)
 
     $ cd && git clone git@github.com:utilitywarehouse/uw-bill-source-history.git
-    $ billsourcery --source-root=${PATH_TO_BILL_SOURCE} calls-neo | cypher-shell
+    $ billsourcery --source-root=${PATH_TO_BILL_SOURCE} generate-graph --output-type neo | cypher-shell
 
 ### Visualise graph data (example queries)
 
