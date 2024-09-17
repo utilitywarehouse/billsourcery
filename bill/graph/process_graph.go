@@ -22,11 +22,13 @@ import (
 func newGraph() *graph {
 	return &graph{
 		nodes: make(map[nodeId]*node),
+		used:  make(map[nodeId]struct{}),
 	}
 }
 
 type graph struct {
 	nodes map[nodeId]*node
+	used  map[nodeId]struct{}
 }
 
 func (c *graph) addNode(node *node) {
@@ -36,14 +38,17 @@ func (c *graph) addNode(node *node) {
 	// "found" them anywhere, because they don't exist in the source code.
 	for referenced := range node.Refs {
 		if referenced.Type == ntTable || referenced.Type == ntField || referenced.Type == ntIndex || referenced.Type == ntWorkArea {
+			// Create node if missing
 			_, ok := c.nodes[referenced]
 			if !ok {
 				node := newNode()
 				node.nodeId = referenced
 				node.Label = referenced.Name
-				node.Used = true
 				c.nodes[referenced] = node
 			}
+
+			// Mark as used
+			c.used[referenced] = struct{}{}
 		}
 	}
 
@@ -71,7 +76,8 @@ func (c *graph) writeGraph(output graphOutput) error {
 		id := sanitiseId(n.id())
 
 		var labels []string
-		if n.Used {
+		_, used := c.used[n.nodeId]
+		if used {
 			labels = []string{n.Type.String(), "used"}
 		} else {
 			labels = []string{n.Type.String()}
@@ -398,12 +404,7 @@ func (g *graph) applyModules(modulesCsv, modudetCsv string) error {
 		if strings.Contains(name, ".") {
 			id, _ := idAndLabelFromFullName(name)
 			if id.Type != "UNKNOWN" {
-				n, ok := g.nodes[id]
-				if !ok {
-					log.Printf("failed to find node to mark as used : %#v", id)
-				} else {
-					n.Used = true
-				}
+				g.used[id] = struct{}{}
 			}
 		}
 	}
@@ -537,7 +538,6 @@ func (n *nodeId) id() string {
 type node struct {
 	nodeId
 	Label string
-	Used  bool
 	Txt   []string `json:"-"`
 	Refs  map[nodeId]struct{}
 }
