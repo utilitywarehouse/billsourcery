@@ -31,6 +31,11 @@ This may take some time to import (e.g. 10 or 20 minutes)
     $ cd && git clone git@github.com:utilitywarehouse/uw-bill-source-history.git
     $ billsourcery --source-root=${PATH_TO_BILL_SOURCE} generate-graph --output-type neo | cypher-shell
 
+alternatively, if you also want usage information, first obtain CSVs of the ModuleS and ModuDet tables
+from Bill using eqdb-loader, and then use :
+
+    $ billsourcery --source-root=${PATH_TO_BILL_SOURCE} generate-graph --output-type neo --modules-csv /path/to/ModuleS.csv --modudet-csv /path/to/ModuDet.csv  | cypher-shell
+
 ### Visualise graph data (example queries)
 
 Navigate to [http://localhost:7474/](http://localhost:7474/)
