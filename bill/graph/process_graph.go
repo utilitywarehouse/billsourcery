@@ -129,7 +129,7 @@ func (cb *graph) process(path string) error {
 
 	br := bufio.NewReader(f)
 
-	node := newNode()
+	n := newNode()
 
 	ppd := ""
 
@@ -150,7 +150,7 @@ func (cb *graph) process(path string) error {
 
 			fullName := spl[0]
 
-			node.nodeId, node.Label = idAndLabelFromFullName(fullName)
+			n.nodeId, n.Label = idAndLabelFromFullName(fullName)
 		case "GRP,":
 			_, _ = br.ReadString('\n')
 		case "FLD,":
@@ -159,21 +159,21 @@ func (cb *graph) process(path string) error {
 			s = strings.TrimPrefix(s, "FLD,12,")
 			spl := strings.SplitN(s, ",", 2)
 
-			node.addFieldRef(spl[0])
+			n.addFieldRef(spl[0])
 		case "IDX,":
 			s, _ := br.ReadString('\n')
 
 			s = strings.TrimPrefix(s, "IDX,04,")
 			spl := strings.SplitN(s, ",", 2)
 
-			node.addIndexRef(spl[0])
+			n.addIndexRef(spl[0])
 		case "WRK,":
 			s, _ := br.ReadString('\n')
 
 			s = strings.TrimPrefix(s, "WRK,10,")
 			spl := strings.SplitN(s, ",", 2)
 
-			node.addWrkRef(spl[0])
+			n.addWrkRef(spl[0])
 		case "TXT,":
 			s, _ := br.ReadString('\n')
 
@@ -190,22 +190,22 @@ func (cb *graph) process(path string) error {
 				return err
 			}
 			text := string(buf)
-			node.addText(text)
+			n.addText(text)
 
 			// We should have a XTX next, which we can discard
 			s, _ = br.ReadString('\n')
 			if !strings.HasPrefix(s, "XTX,") {
-				return fmt.Errorf("expected XTX prefix, but got %s in file %s", strings.TrimSpace(s), node.Name)
+				return fmt.Errorf("expected XTX prefix, but got %s in file %s", strings.TrimSpace(s), n.Name)
 			}
 
-			if node.nodeId.Type != ntPpl { // Hack. Skip ppl for now because we can't do it properly
+			if n.nodeId.Type != ntPpl { // Hack. Skip ppl for now because we can't do it properly
 				// Find method calls in text
-				refs, err := findMethodRefs(node.nodeId, text)
+				refs, err := findMethodRefs(n.nodeId, text)
 				if err != nil {
 					return err
 				}
 				for _, ref := range refs {
-					node.addMethodRef(ref)
+					n.addMethodRef(ref)
 				}
 			}
 		case "SUB,":
@@ -214,21 +214,21 @@ func (cb *graph) process(path string) error {
 			s = strings.TrimPrefix(s, "SUB,27,")
 			spl := strings.SplitN(s, ",", 2)
 
-			node.addSubtableRef(spl[0])
+			n.addSubtableRef(spl[0])
 		case "TBL,":
 			s, _ := br.ReadString('\n')
 
 			s = strings.TrimPrefix(s, "TBL,16,")
 			spl := strings.SplitN(s, ",", 2)
 
-			node.addSubtableRef(spl[0])
+			n.addSubtableRef(spl[0])
 		case "PPC,":
 			s, _ := br.ReadString('\n')
 
 			s = strings.TrimPrefix(s, "PPC,18,")
 			spl := strings.SplitN(s, ",", 2)
 
-			node.addPublicProcedureRef(spl[0])
+			n.addPublicProcedureRef(spl[0])
 
 			// mark this procedure as used
 			cb.markPublicProcedureUsed(spl[0])
@@ -241,20 +241,20 @@ func (cb *graph) process(path string) error {
 			name := spl[0]
 
 			if ppd != "" {
-				cb.addNode(node)
+				cb.addNode(n)
 			} else {
-				if node.Type != ntPpl {
-					log.Fatalf("found public procedure definitions outside of a public procedure library: %s, %s", name, node.Type)
+				if n.Type != ntPpl {
+					log.Fatalf("found public procedure definitions outside of a public procedure library: %s, %s", name, n.Type)
 				}
 
-				if len(node.Refs) != 0 {
-					log.Fatalf("found public procedure library with references outside of the procedure definitions: %s %#v", path, node)
+				if len(n.Refs) != 0 {
+					log.Fatalf("found public procedure library with references outside of the procedure definitions: %s %#v", path, n)
 				}
 			}
 
-			node = newNode()
-			node.Label = name
-			node.nodeId = newNodeId(name, ntPubProc)
+			n = newNode()
+			n.Label = name
+			n.nodeId = newNodeId(name, ntPubProc)
 
 			ppd = name
 
@@ -291,8 +291,8 @@ func (cb *graph) process(path string) error {
 		}
 	}
 
-	if node.Type != ntPpl {
-		cb.addNode(node)
+	if n.Type != ntPpl {
+		cb.addNode(n)
 	}
 	return nil
 }
