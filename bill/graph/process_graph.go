@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"os"
+	"slices"
 	"sort"
 	"strconv"
 	"time"
@@ -133,6 +134,14 @@ func (cb *graph) process(path string) error {
 
 	ppd := ""
 
+	type lpcCall struct {
+		from nodeId
+		to   nodeId
+	}
+
+	var ppdsDefined []nodeId
+	var lpcsCalls []lpcCall
+
 	for {
 		prefix, err := br.Peek(4)
 		if err == io.EOF {
@@ -242,6 +251,7 @@ func (cb *graph) process(path string) error {
 
 			if ppd != "" {
 				cb.addNode(n)
+				ppdsDefined = append(ppdsDefined, n.nodeId)
 			} else {
 				if n.Type != ntPpl {
 					log.Fatalf("found public procedure definitions outside of a public procedure library: %s, %s", name, n.Type)
@@ -264,9 +274,20 @@ func (cb *graph) process(path string) error {
 		case "VAD,", "VAR,":
 			// Ignore local variables
 			_, _ = br.ReadString('\n')
-		case "LPD,", "LPC,":
+		case "LPD,":
 			// Ignore local procedures
 			_, _ = br.ReadString('\n')
+
+		case "LPC,":
+			// We care about some local procedure calls. If we're really
+			// calling a public procedure from the same PPL that it is
+			// defined in, it shows up as a LPC.
+			s, _ := br.ReadString('\n')
+
+			s = strings.TrimPrefix(s, "LPC,20,")
+			spl := strings.SplitN(s, ",", 2)
+
+			lpcsCalls = append(lpcsCalls, lpcCall{from: n.nodeId, to: newNodeId(spl[0], ntPubProc)})
 
 		case "AUD,", "AUT,":
 			// Ignore autovars
@@ -294,6 +315,23 @@ func (cb *graph) process(path string) error {
 	if n.Type != ntPpl {
 		cb.addNode(n)
 	}
+
+	// Check for LPCs that are really calls to locally decined PPDs
+	for _, call := range lpcsCalls {
+		if slices.Contains(ppdsDefined, call.to) {
+
+			n, ok := cb.nodes[call.from]
+			if !ok {
+				panic("bug - this node should have been added at this point")
+			}
+
+			n.addPublicProcedureRef(call.to.Name)
+
+			// mark this procedure as used
+			cb.markPublicProcedureUsed(call.to.Name)
+		}
+	}
+
 	return nil
 }
 
