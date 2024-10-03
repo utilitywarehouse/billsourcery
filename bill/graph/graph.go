@@ -44,7 +44,7 @@ func listNodeType(sourceRoot string, nodeType nodeType) error {
 	return nil
 }
 
-func Graph(sourceRoot string, output string, moduleCsv string, modudetCsv string) error {
+func Graph(sourceRoot string, output string, moduleCsv string, modudetCsv string, schemaDumpJson string) error {
 
 	var graphOutput graphOutput
 	switch output {
@@ -57,6 +57,9 @@ func Graph(sourceRoot string, output string, moduleCsv string, modudetCsv string
 	}
 
 	graph := newGraph()
+
+	graph.applySchema(schemaDumpJson)
+
 	if err := walkSource(sourceRoot, graph); err != nil {
 		return err
 	}

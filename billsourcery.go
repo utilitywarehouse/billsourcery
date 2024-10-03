@@ -193,9 +193,20 @@ func main() {
 						Value: "",
 						Usage: "Bill ModuDet table CSV file",
 					},
+					&cli.StringFlag{
+						Name:  "schema-dump-json",
+						Value: "",
+						Usage: "Schema dump JSON (from uw-equinox-rs cli-client)",
+					},
 				},
 				Action: func(ctx *cli.Context) error {
-					return graph.Graph(ctx.String("source-root"), ctx.String("output-type"), ctx.String("modules-csv"), ctx.String("modudet-csv"))
+					return graph.Graph(
+						ctx.String("source-root"),
+						ctx.String("output-type"),
+						ctx.String("modules-csv"),
+						ctx.String("modudet-csv"),
+						ctx.String("schema-dump-json"),
+					)
 				},
 			},
 			{

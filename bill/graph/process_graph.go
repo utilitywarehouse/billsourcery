@@ -3,6 +3,7 @@ package graph
 import (
 	"bufio"
 	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -453,6 +454,83 @@ func (g *graph) applyModules(modulesCsv, modudetCsv string) error {
 			if id.Type != "UNKNOWN" {
 				g.used[id] = struct{}{}
 			}
+		}
+	}
+
+	return nil
+}
+
+func (g *graph) applySchema(schemaDumpJson string) error {
+
+	if schemaDumpJson == "" {
+		return nil
+	}
+
+	f, err := os.Open(schemaDumpJson)
+	if err != nil {
+		return fmt.Errorf("failed to open schema dump file : %e", err)
+	}
+	br := bufio.NewReader(f)
+
+	dec := json.NewDecoder(br)
+
+	var tables []Table
+	if err := dec.Decode(&tables); err != nil {
+		return fmt.Errorf("failed to decode schema dump file : %e", err)
+	}
+
+	for _, table := range tables {
+		tableNodeId := nodeId{
+			Name: strings.ToLower(table.Name),
+			Type: ntTable,
+		}
+		// Ensure table node exists
+		_, ok := g.nodes[tableNodeId]
+		if !ok {
+			g.nodes[tableNodeId] = &node{
+				nodeId: tableNodeId,
+				Label:  table.Name,
+				Refs:   make(map[nodeId]struct{}),
+			}
+		}
+		for _, index := range table.Indexes {
+			indexNodeId := nodeId{
+				Name: strings.ToLower(index.Name),
+				Type: ntIndex,
+			}
+
+			indexNode, ok := g.nodes[indexNodeId]
+			if !ok {
+				// Create index node if missing
+				indexNode = &node{
+					nodeId: indexNodeId,
+					Label:  index.Name,
+					Refs:   make(map[nodeId]struct{}),
+				}
+				g.nodes[indexNodeId] = indexNode
+			}
+			// Add a reference from this index to the table
+			indexNode.Refs[tableNodeId] = struct{}{}
+		}
+
+		for _, field := range table.Fields {
+			fieldNodeId := nodeId{
+				Name: strings.ToLower(field.Name),
+				Type: ntField,
+			}
+
+			fieldNode, ok := g.nodes[fieldNodeId]
+			if !ok {
+				// Create field node if missing
+				fieldNode = &node{
+					nodeId: fieldNodeId,
+					Label:  field.Name,
+					Refs:   make(map[nodeId]struct{}),
+				}
+				g.nodes[fieldNodeId] = fieldNode
+			}
+			// Add a reference from this field to the table
+			fieldNode.Refs[tableNodeId] = struct{}{}
 		}
 	}
 
