@@ -64,4 +64,7 @@ Find the most referenced tables:
 
     `MATCH (n)-[references]->(t:Table) RETURN  t.name, count(n) order by count(n) desc limit 20`
 
+Find unreferenced fields on tables that are marked as Used:
+
+    `MATCH (f:Field)-[:references]->(t:Table:Used) WHERE NOT (f)<-[:references]-() RETURN t.name, f.name order by t.name, f.name`
 
