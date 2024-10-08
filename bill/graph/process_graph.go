@@ -460,6 +460,26 @@ func (g *graph) applyModules(modulesCsv, modudetCsv string) error {
 	return nil
 }
 
+// This passes over the graph, and wherever something (e.g., a method)
+// references an index, also ensure we have a direct reference to the
+// corresponsing table.
+func (g *graph) makeIndexRefsAlsoTable() {
+	for _, node := range g.nodes {
+		for ref := range node.Refs {
+			if ref.Type == ntIndex {
+				indexNode, ok := g.nodes[ref]
+				if ok {
+					for innerRef := range indexNode.Refs {
+						if innerRef.Type == ntTable {
+							node.Refs[innerRef] = struct{}{}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 func (g *graph) applySchema(schemaDumpJson string) error {
 
 	if schemaDumpJson == "" {

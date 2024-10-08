@@ -66,6 +66,8 @@ func Graph(sourceRoot string, output string, moduleCsv string, modudetCsv string
 
 	graph.applyModules(moduleCsv, modudetCsv)
 
+	graph.makeIndexRefsAlsoTable()
+
 	return graph.writeGraph(graphOutput)
 }
 
