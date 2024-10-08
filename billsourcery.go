@@ -119,6 +119,20 @@ func main() {
 				},
 			},
 			{
+				Name:  "extract-plain-source",
+				Usage: "Extract the plain source code without surrounding metadata",
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "target-dir",
+						Value: "/tmp/plain_source/",
+						Usage: "target directory",
+					},
+				},
+				Action: func(ctx *cli.Context) error {
+					return bill.ExtractPlainSource(ctx.String("source-root"), ctx.String("target-dir"))
+				},
+			},
+			{
 				Name:  "string-constants",
 				Usage: "Dump all \" delimited string constants found in the source, one per line, to stdout (multi-line strings not included)",
 				Action: func(ctx *cli.Context) error {

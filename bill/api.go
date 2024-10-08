@@ -1,6 +1,7 @@
 package bill
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,6 +9,15 @@ import (
 
 func StripComments(sourceRoot string) error {
 	return walkSource(sourceRoot, &commentStripper{})
+}
+
+func ExtractPlainSource(sourceRoot string, targetDir string) error {
+	pse := &plainSourceExtractor{sourceRoot, targetDir, 0, 0}
+	if err := walkSource(sourceRoot, pse); err != nil {
+		return err
+	}
+	fmt.Printf("Wrote %d plain output files from %d input files\n", pse.outputs, pse.inputs)
+	return nil
 }
 
 func StringConstants(sourceRoot string) error {
