@@ -60,6 +60,15 @@ Find table `ginv` and everything that references it, recursively.
 
     `MATCH p=(n:Node)-[r:references*]->(x:Table) where lower(x.name)="ginv" RETURN p`
 
+A variation on the above, find everything that references `ginv`, excluding fields and indexes for clarity (tables accessed via indexes will still be included:
+
+```
+MATCH path = ()-[*]->(t:Table)
+WHERE NONE(n IN nodes(path) WHERE (n:Field or n:Index))
+and lower(t.name) = "ginv"
+RETURN path
+```
+
 Find the most referenced tables:
 
     `MATCH (n)-[references]->(t:Table) RETURN  t.name, count(n) order by count(n) desc limit 20`
