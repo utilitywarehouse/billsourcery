@@ -77,3 +77,17 @@ Find unreferenced fields on tables that are marked as Used:
 
     `MATCH (f:Field)-[:references]->(t:Table:Used) WHERE NOT (f)<-[:references]-() RETURN t.name, f.name order by t.name, f.name`
 
+Find unused indexes on tables that are used:
+
+    `MATCH (i:Index)-[:references]->(t:Table:Used) WHERE NOT (i)<-[:references]-() RETURN t.name, i.name order by t.name, i.name`
+
+Find unreferenced tables:
+
+```
+MATCH (n:Table)
+where not exists {
+  match (n:Table)<-[r:references]-(m) where NOT m:Index and NOT m:Field AND r IS NOT NULL
+}
+RETURN distinct n
+```
+
