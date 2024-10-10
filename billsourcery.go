@@ -198,6 +198,11 @@ func main() {
 						Value: "",
 						Usage: "Schema dump JSON (from uw-equinox-rs cli-client)",
 					},
+					&cli.StringFlag{
+						Name:  "special-json",
+						Value: "./special.json",
+						Usage: "Special cases JSON (see example JSON for details)",
+					},
 				},
 				Action: func(ctx *cli.Context) error {
 					return graph.Graph(
@@ -206,6 +211,7 @@ func main() {
 						ctx.String("modules-csv"),
 						ctx.String("modudet-csv"),
 						ctx.String("schema-dump-json"),
+						ctx.String("special-json"),
 					)
 				},
 			},

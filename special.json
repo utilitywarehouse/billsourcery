@@ -1,0 +1,9 @@
+{
+  "systemProcedures": [
+    "AutoExecAfterLogin",
+    "AutoExecBeforeLogout",
+    "AutoexecAfterModuleStart",
+    "AutoexecAfterSaveFile",
+    "AutoexecBeforeModuleStop"
+  ]
+}

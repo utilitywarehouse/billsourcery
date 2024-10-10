@@ -480,6 +480,37 @@ func (g *graph) makeIndexRefsAlsoTable() {
 	}
 }
 
+func (g *graph) applySpecial(specialJson string) error {
+
+	type Special struct {
+		SystemProcedures []string `json:"systemProcedures,omitempty"`
+	}
+
+	if specialJson == "" {
+		return nil
+	}
+
+	f, err := os.Open(specialJson)
+	if err != nil {
+		return fmt.Errorf("failed to open JSON file : %e", err)
+	}
+	br := bufio.NewReader(f)
+
+	dec := json.NewDecoder(br)
+
+	var special Special
+	if err := dec.Decode(&special); err != nil {
+		return fmt.Errorf("failed to decode JSON file : %e", err)
+	}
+
+	for _, procName := range special.SystemProcedures {
+		id := newNodeId(procName, ntPubProc)
+		g.used[id] = struct{}{}
+	}
+
+	return nil
+}
+
 func (g *graph) applySchema(schemaDumpJson string) error {
 
 	if schemaDumpJson == "" {
