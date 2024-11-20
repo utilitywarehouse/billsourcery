@@ -161,8 +161,6 @@ func (cb *graph) process(path string) error {
 			fullName := spl[0]
 
 			n.nodeId, n.Label = idAndLabelFromFullName(fullName)
-		case "GRP,":
-			_, _ = br.ReadString('\n')
 		case "FLD,":
 			s, _ := br.ReadString('\n')
 
@@ -225,6 +223,15 @@ func (cb *graph) process(path string) error {
 			spl := strings.SplitN(s, ",", 2)
 
 			n.addSubtableRef(spl[0])
+		case "GRP,":
+			s, _ := br.ReadString('\n')
+
+			s = strings.TrimPrefix(s, "GRP,131,")
+			spl := strings.SplitN(s, ",", 2)
+
+			if len(spl[0]) != 0 {
+				n.addSubtableRef(spl[0])
+			}
 		case "TBL,":
 			s, _ := br.ReadString('\n')
 
