@@ -91,3 +91,11 @@ where not exists {
 RETURN distinct n
 ```
 
+Find everything `GENIENEW` references (directly or indirectly) excluding fields and indexes:
+```
+MATCH path = (m:Node)-[*]->(t:Table)
+WHERE NONE(n IN nodes(path) WHERE (n:Field or n:Index))
+and lower(m.name) = "genienew"
+RETURN path
+```
+
