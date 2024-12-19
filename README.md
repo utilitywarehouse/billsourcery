@@ -99,3 +99,10 @@ and lower(m.name) = "genienew"
 RETURN path
 ```
 
+
+Find everything that references pesrates (directly or indirectly) excluding fields and indexes:
+```
+MATCH p=(n:Node)-[r:references*]->(x:Node)
+WHERE NONE(n IN nodes(p) WHERE (n:Field or n:Index))
+and lower(x.name)="pesrates" RETURN p
+```
