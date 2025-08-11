@@ -75,7 +75,7 @@ func callStatsTable(sourceRoot string, dsn string) error {
 	sort.SliceStable(results, func(i, j int) bool { return results[i].CallCount < results[j].CallCount })
 
 	tw := tablewriter.NewWriter(os.Stdout)
-	tw.SetHeader([]string{"module", "type", "call count"})
+	tw.Header([]string{"module", "type", "call count"})
 	for _, res := range results {
 		tw.Append([]string{res.ModuleName, res.ModuleType.String(), strconv.Itoa(res.CallCount)})
 	}
